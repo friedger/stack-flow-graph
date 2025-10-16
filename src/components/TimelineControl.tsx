@@ -1,7 +1,8 @@
 import { Slider } from '@/components/ui/slider';
 import { Card } from '@/components/ui/card';
-import { Play, Pause, RotateCcw } from 'lucide-react';
+import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
 
 interface TimelineControlProps {
   minTime: number;
@@ -24,6 +25,19 @@ export function TimelineControl({
   onReset,
   transactionTimestamps
 }: TimelineControlProps) {
+  // Group timestamps by day
+  const dayGroups = useMemo(() => {
+    const groups = new Map<string, number>();
+    transactionTimestamps.forEach(ts => {
+      const date = new Date(ts);
+      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+      if (!groups.has(dayKey)) {
+        groups.set(dayKey, ts);
+      }
+    });
+    return Array.from(groups.values()).sort((a, b) => a - b);
+  }, [transactionTimestamps]);
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short',
@@ -34,16 +48,68 @@ export function TimelineControl({
     });
   };
 
+  const formatDayOnly = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   const handleSliderChange = (values: number[]) => {
     onTimeChange(values[0]);
   };
 
+  const handlePreviousDay = () => {
+    const currentDayIndex = dayGroups.findIndex(ts => ts >= currentTime);
+    if (currentDayIndex > 0) {
+      onTimeChange(dayGroups[currentDayIndex - 1]);
+    }
+  };
+
+  const handleNextDay = () => {
+    const currentDayIndex = dayGroups.findIndex(ts => ts > currentTime);
+    if (currentDayIndex !== -1 && currentDayIndex < dayGroups.length) {
+      onTimeChange(dayGroups[currentDayIndex]);
+    }
+  };
+
+  const currentDayIndex = dayGroups.findIndex(ts => ts > currentTime);
+  const hasPreviousDay = currentDayIndex > 0 || (currentDayIndex === -1 && dayGroups.length > 0);
+  const hasNextDay = currentDayIndex !== -1 && currentDayIndex < dayGroups.length;
+
   return (
     <Card className="p-6 bg-card border-border">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Timeline Control</h3>
-          <div className="flex items-center gap-2">
+          
+          {/* Day Navigation */}
+          <div className="flex items-center gap-2 justify-center">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePreviousDay}
+              disabled={!hasPreviousDay}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous Day
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextDay}
+              disabled={!hasNextDay}
+              className="gap-1"
+            >
+              Next Day
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Playback Controls */}
+          <div className="flex items-center justify-center gap-2">
             <Button
               variant="outline"
               size="icon"
@@ -77,16 +143,21 @@ export function TimelineControl({
               onValueChange={handleSliderChange}
               className="w-full"
             />
-            {/* Transaction markers */}
-            <div className="absolute top-1/2 left-0 right-0 h-6 pointer-events-none -translate-y-1/2">
-              {transactionTimestamps.map((timestamp, idx) => {
+            {/* Day group markers */}
+            <div className="absolute top-1/2 left-0 right-0 h-8 pointer-events-none -translate-y-1/2">
+              {dayGroups.map((timestamp, idx) => {
                 const position = ((timestamp - minTime) / (maxTime - minTime)) * 100;
                 return (
                   <div
                     key={idx}
-                    className="absolute w-0.5 h-6 bg-primary/40"
+                    className="absolute"
                     style={{ left: `${position}%` }}
-                  />
+                  >
+                    <div className="w-1 h-8 bg-primary/60 -translate-x-1/2" />
+                    <div className="text-[8px] text-muted-foreground mt-1 -translate-x-1/2 whitespace-nowrap font-mono">
+                      {formatDayOnly(timestamp)}
+                    </div>
+                  </div>
                 );
               })}
             </div>

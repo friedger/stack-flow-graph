@@ -121,7 +121,11 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       })
       .attr('stroke', 'hsl(var(--primary-glow))')
       .attr('stroke-width', 2)
-      .style('cursor', 'pointer');
+      .style('cursor', 'grab')
+      .call(d3.drag<any, any>()
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended) as any);
 
     // Add address labels (above nodes)
     const addressLabels = g.append('g')
@@ -223,6 +227,45 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
     balanceLabels
       .attr('x', (d: any) => d.fx)
       .attr('y', (d: any) => d.fy);
+
+    // Drag functions
+    function dragstarted(event: any, d: any) {
+      d3.select(event.sourceEvent.target).style('cursor', 'grabbing');
+    }
+
+    function dragged(event: any, d: any) {
+      d.fx = event.x;
+      d.fy = event.y;
+      
+      // Update node position
+      d3.select(event.sourceEvent.target.parentNode)
+        .selectAll('circle')
+        .filter((circleD: any) => circleD.id === d.id)
+        .attr('cx', d.fx)
+        .attr('cy', d.fy);
+      
+      // Update links
+      link
+        .attr('x1', (linkD: any) => linkD.source.fx)
+        .attr('y1', (linkD: any) => linkD.source.fy)
+        .attr('x2', (linkD: any) => linkD.target.fx)
+        .attr('y2', (linkD: any) => linkD.target.fy);
+      
+      // Update labels
+      addressLabels
+        .filter((labelD: any) => labelD.id === d.id)
+        .attr('x', d.fx)
+        .attr('y', d.fy);
+      
+      balanceLabels
+        .filter((labelD: any) => labelD.id === d.id)
+        .attr('x', d.fx)
+        .attr('y', d.fy);
+    }
+
+    function dragended(event: any) {
+      d3.select(event.sourceEvent.target).style('cursor', 'grab');
+    }
 
     return () => {
       tooltip.remove();
