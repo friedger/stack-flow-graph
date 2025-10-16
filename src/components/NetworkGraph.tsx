@@ -342,20 +342,27 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       return currentTimestamp >= dayStart && (!nextDayStart || currentTimestamp < nextDayStart);
     });
 
+    if (currentDayIndex === -1) {
+      g.selectAll('.transaction-particle').remove();
+      return;
+    }
+
+    const currentDayStart = dayGroups[currentDayIndex];
+    const nextDayStart = dayGroups[currentDayIndex + 1] || currentTimestamp + 86400000;
+
     // Get all transactions from the current day group
-    const activeTransactions = currentDayIndex >= 0 ? transactions.filter(tx => {
-      const txDate = new Date(tx.timestamp);
-      const currentDate = new Date(currentTimestamp);
-      return txDate.getFullYear() === currentDate.getFullYear() &&
-             txDate.getMonth() === currentDate.getMonth() &&
-             txDate.getDate() === currentDate.getDate();
-    }) : [];
+    const activeTransactions = transactions.filter(
+      (tx) => tx.timestamp >= currentDayStart && tx.timestamp < nextDayStart
+    );
 
     // Remove old particles
     g.selectAll('.transaction-particle').remove();
 
     // Create particles for active transactions
     const particleGroup = g.append('g').attr('class', 'transaction-particles');
+
+    // Particle animation duration (2 seconds)
+    const particleAnimationDuration = 2000;
 
     activeTransactions.forEach(tx => {
       const sourcePos = nodePositions.get(tx.sender);
@@ -370,15 +377,25 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         ? MIN_PARTICLE_SIZE 
         : Math.min(20, MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / 100));
 
-      // Calculate progress (0 to 1) for animation within the day
-      // Animate over 1 second from the transaction timestamp
-      const timeSinceTx = currentTimestamp - tx.timestamp;
-      const animationDuration = 1000; // 1 second
-      const progress = Math.min(1, Math.max(0, timeSinceTx / animationDuration));
+      // Calculate progress (0 to 1) for animation
+      // Progress is based on time since the day started
+      const timeSinceDayStart = currentTimestamp - currentDayStart;
+      const progress = Math.min(1, Math.max(0, timeSinceDayStart / particleAnimationDuration));
+
+      // Only show particle if it hasn't completed its journey
+      if (progress >= 1) return;
 
       // Interpolate position
       const currentX = sourcePos.x + (targetPos.x - sourcePos.x) * progress;
       const currentY = sourcePos.y + (targetPos.y - sourcePos.y) * progress;
+
+      // Fade in at start, fade out at end
+      let opacity = 0.8;
+      if (progress < 0.1) {
+        opacity = progress * 10 * 0.8;
+      } else if (progress > 0.9) {
+        opacity = (1 - progress) * 10 * 0.8;
+      }
 
       // Create particle
       particleGroup.append('circle')
@@ -389,11 +406,11 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         .attr('fill', 'hsl(var(--accent))')
         .attr('stroke', 'hsl(var(--accent-glow))')
         .attr('stroke-width', 1.5)
-        .style('opacity', progress < 0.1 ? progress / 0.1 : 0.8) // Fade in quickly, stay visible
+        .style('opacity', opacity)
         .style('filter', 'drop-shadow(0 0 4px hsl(var(--accent)))');
     });
 
-  }, [nodes, transactions, currentTimestamp, dimensions]);
+  }, [nodes, transactions, currentTimestamp, dimensions, dayGroups]);
 
   return (
     <svg

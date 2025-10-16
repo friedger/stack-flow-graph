@@ -97,50 +97,65 @@ const Index = () => {
   useEffect(() => {
     if (!isPlaying || dayGroups.length === 0) return;
 
-    // Minimum duration for each day group (1 second)
-    const minDayDuration = 1000;
+    const particleAnimationDuration = 2000; // 2 seconds for particle animation
     const stepInterval = 50; // Update every 50ms for smooth animation
+    const totalTimeRange = maxTime - minTime;
+    const baseStepSize = totalTimeRange / 1000; // Smooth progression
+
+    let lastDayIndex = dayGroups.findIndex((dayStart, idx) => {
+      const nextDayStart = dayGroups[idx + 1];
+      return currentTime >= dayStart && (!nextDayStart || currentTime < nextDayStart);
+    });
 
     const interval = setInterval(() => {
       setCurrentTime((prev) => {
-        // Find which day group we're currently in
+        // Find current day index
         const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
           const nextDayStart = dayGroups[idx + 1];
           return prev >= dayStart && (!nextDayStart || prev < nextDayStart);
         });
 
         if (currentDayIndex === -1) {
-          // Before first day, jump to first day
           return dayGroups[0];
         }
 
-        if (currentDayIndex >= dayGroups.length - 1) {
-          // We're in the last day group
-          if (prev >= maxTime) {
-            setIsPlaying(false);
-            return maxTime;
-          }
-          // Continue to max time smoothly
-          return Math.min(prev + (stepInterval * 10), maxTime);
+        if (prev >= maxTime) {
+          setIsPlaying(false);
+          return maxTime;
         }
 
-        // Calculate time spent in current day group
+        // Check if we just entered a new day
+        const enteredNewDay = currentDayIndex !== lastDayIndex && currentDayIndex !== -1;
+        if (enteredNewDay) {
+          lastDayIndex = currentDayIndex;
+        }
+
+        // If we're in the last day group, advance to maxTime
+        if (currentDayIndex >= dayGroups.length - 1) {
+          return Math.min(prev + baseStepSize, maxTime);
+        }
+
         const currentDayStart = dayGroups[currentDayIndex];
         const nextDayStart = dayGroups[currentDayIndex + 1];
-        const timeInCurrentDay = prev - currentDayStart;
+        const timeToNextDay = nextDayStart - prev;
 
-        if (timeInCurrentDay >= minDayDuration) {
-          // Move to next day group
-          return nextDayStart;
+        // If we just entered this day, wait for particle animation to complete
+        const timeInCurrentDay = prev - currentDayStart;
+        if (timeInCurrentDay < particleAnimationDuration && timeToNextDay < particleAnimationDuration - timeInCurrentDay) {
+          // Wait - don't advance yet, particles still animating
+          return prev;
         }
 
-        // Continue in current day, increment by small step
-        return Math.min(prev + (stepInterval * 10), nextDayStart);
+        // Normal advancement
+        const nextTime = prev + baseStepSize;
+        
+        // Don't overshoot the next day
+        return Math.min(nextTime, nextDayStart);
       });
     }, stepInterval);
 
     return () => clearInterval(interval);
-  }, [isPlaying, dayGroups, maxTime]);
+  }, [isPlaying, dayGroups, maxTime, minTime, currentTime]);
 
   const handlePlayPause = () => {
     if (currentTime >= maxTime) {
