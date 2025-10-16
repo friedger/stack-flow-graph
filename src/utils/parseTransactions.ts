@@ -167,6 +167,13 @@ export function calculateTimeSeriesBalances(
     balances.set(addr, initialBalances?.get(addr) || 0);
   });
   
+  // Find sip-031 contract address for daily rewards
+  const sip031Address = Array.from(filteredAddresses).find(addr => 
+    addr.startsWith('SP000') && addr.includes('.sip-031')
+  );
+  const sept17Start = new Date('2025-09-17T00:00:00Z').getTime();
+  const dailyReward = 68400;
+  
   // Process transactions chronologically
   transactions.forEach(tx => {
     if (filteredAddresses.has(tx.sender)) {
@@ -181,10 +188,18 @@ export function calculateTimeSeriesBalances(
     
     // Snapshot all balances at this timestamp
     filteredAddresses.forEach(addr => {
+      let balance = balances.get(addr) || 0;
+      
+      // Add daily rewards for sip-031 contract
+      if (addr === sip031Address && tx.timestamp > sept17Start) {
+        const daysSinceSept17 = Math.floor((tx.timestamp - sept17Start) / (24 * 60 * 60 * 1000));
+        balance += daysSinceSept17 * dailyReward;
+      }
+      
       timeSeriesData.push({
         timestamp: tx.timestamp,
         address: addr,
-        balance: balances.get(addr) || 0
+        balance: balance
       });
     });
   });
