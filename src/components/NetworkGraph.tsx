@@ -8,9 +8,10 @@ interface NetworkGraphProps {
   timeSeriesData: TimeSeriesBalance[];
   currentTimestamp: number;
   transactions: Transaction[];
+  dayGroups: number[];
 }
 
-export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions }: NetworkGraphProps) {
+export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions, dayGroups }: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -335,12 +336,20 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       });
     });
 
-    // Time window for showing active transactions (1 second animation duration)
-    const timeWindow = 1000;
-    const activeTransactions = transactions.filter(tx => {
-      const timeSinceTx = currentTimestamp - tx.timestamp;
-      return timeSinceTx >= 0 && timeSinceTx <= timeWindow;
+    // Find the current day group
+    const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
+      const nextDayStart = dayGroups[idx + 1];
+      return currentTimestamp >= dayStart && (!nextDayStart || currentTimestamp < nextDayStart);
     });
+
+    // Get all transactions from the current day group
+    const activeTransactions = currentDayIndex >= 0 ? transactions.filter(tx => {
+      const txDate = new Date(tx.timestamp);
+      const currentDate = new Date(currentTimestamp);
+      return txDate.getFullYear() === currentDate.getFullYear() &&
+             txDate.getMonth() === currentDate.getMonth() &&
+             txDate.getDate() === currentDate.getDate();
+    }) : [];
 
     // Remove old particles
     g.selectAll('.transaction-particle').remove();
@@ -361,9 +370,11 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         ? MIN_PARTICLE_SIZE 
         : Math.min(20, MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / 100));
 
-      // Calculate progress (0 to 1) based on when transaction happened
+      // Calculate progress (0 to 1) for animation within the day
+      // Animate over 1 second from the transaction timestamp
       const timeSinceTx = currentTimestamp - tx.timestamp;
-      const progress = Math.min(1, Math.max(0, timeSinceTx / timeWindow));
+      const animationDuration = 1000; // 1 second
+      const progress = Math.min(1, Math.max(0, timeSinceTx / animationDuration));
 
       // Interpolate position
       const currentX = sourcePos.x + (targetPos.x - sourcePos.x) * progress;
@@ -378,7 +389,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         .attr('fill', 'hsl(var(--accent))')
         .attr('stroke', 'hsl(var(--accent-glow))')
         .attr('stroke-width', 1.5)
-        .style('opacity', Math.sin(progress * Math.PI)) // Fade in and out
+        .style('opacity', progress < 0.1 ? progress / 0.1 : 0.8) // Fade in quickly, stay visible
         .style('filter', 'drop-shadow(0 0 4px hsl(var(--accent)))');
     });
 

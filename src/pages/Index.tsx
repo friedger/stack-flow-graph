@@ -32,6 +32,7 @@ const Index = () => {
   const [maxTime, setMaxTime] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [dayGroups, setDayGroups] = useState<number[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -70,6 +71,17 @@ const Index = () => {
           setMinTime(minTimestamp);
           setMaxTime(maxTimestamp);
           setCurrentTime(maxTimestamp);
+
+          // Calculate day groups
+          const groups = new Map<string, number>();
+          parsedTransactions.forEach(tx => {
+            const date = new Date(tx.timestamp);
+            const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+            if (!groups.has(dayKey)) {
+              groups.set(dayKey, tx.timestamp);
+            }
+          });
+          setDayGroups(Array.from(groups.values()).sort((a, b) => a - b));
         }
 
         setLoading(false);
@@ -83,22 +95,42 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || dayGroups.length === 0) return;
+
+    // Find the current day group index
+    const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
+      const nextDayStart = dayGroups[idx + 1];
+      return currentTime >= dayStart && (!nextDayStart || currentTime < nextDayStart);
+    });
+
+    // Minimum duration for each day group (1 second)
+    const minDayDuration = 1000;
 
     const interval = setInterval(() => {
       setCurrentTime((prev) => {
-        const step = (maxTime - minTime) / 100;
-        const next = prev + step;
-        if (next >= maxTime) {
-          setIsPlaying(false);
+        // Find which day group we're in
+        const dayIndex = dayGroups.findIndex((dayStart, idx) => {
+          const nextDayStart = dayGroups[idx + 1];
+          return prev >= dayStart && (!nextDayStart || prev < nextDayStart);
+        });
+
+        if (dayIndex === -1 || dayIndex >= dayGroups.length - 1) {
+          // We're at or past the last day group
+          if (prev >= maxTime) {
+            setIsPlaying(false);
+            return maxTime;
+          }
           return maxTime;
         }
-        return next;
+
+        // Move to the next day group
+        const nextDayStart = dayGroups[dayIndex + 1];
+        return nextDayStart;
       });
-    }, 100);
+    }, minDayDuration);
 
     return () => clearInterval(interval);
-  }, [isPlaying, minTime, maxTime]);
+  }, [isPlaying, dayGroups, currentTime, maxTime]);
 
   const handlePlayPause = () => {
     if (currentTime >= maxTime) {
@@ -145,6 +177,7 @@ const Index = () => {
             timeSeriesData={timeSeriesData} 
             currentTimestamp={currentTime}
             transactions={transactions}
+            dayGroups={dayGroups}
           />
         </div>
 
