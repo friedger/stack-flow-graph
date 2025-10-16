@@ -47,18 +47,29 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
         }
       });
 
+    // Load saved positions from localStorage
+    const savedPositions = localStorage.getItem('networkGraphPositions');
+    const positionsMap = savedPositions ? JSON.parse(savedPositions) : {};
+
     // Create simulation data and preserve user positions
-    const simulationNodes = nodes.map(node => {
+    const simulationNodes = nodes.map((node, i) => {
       const isContract = node.id.includes('.');
       const contractName = isContract ? node.id.split('.')[1] : '';
+      
+      // Try to use saved position, otherwise use circular layout
+      const angleStep = (2 * Math.PI) / nodes.length;
+      const radius = Math.min(width, height) * 0.35;
+      const angle = i * angleStep;
+      
+      const savedPos = positionsMap[node.id];
       
       return {
         ...node,
         currentBalance: balancesAtTime.get(node.id) || 0,
         isContract,
         contractName,
-        x: width / 2 + (Math.random() - 0.5) * 200,
-        y: height / 2 + (Math.random() - 0.5) * 200
+        fx: savedPos?.x ?? (width / 2 + radius * Math.cos(angle)),
+        fy: savedPos?.y ?? (height / 2 + radius * Math.sin(angle))
       };
     });
 
@@ -67,32 +78,6 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       target: link.target,
       value: link.value
     }));
-
-    // Create stable positions in a circle layout, but preserve user-adjusted positions
-    const angleStep = (2 * Math.PI) / simulationNodes.length;
-    const radius = Math.min(width, height) * 0.35;
-    
-    // Store reference to previous positions
-    const prevPositions = new Map<string, {fx: number, fy: number}>();
-    svg.selectAll('circle, rect').each(function(d: any) {
-      if (d && d.id && d.fx !== undefined && d.fy !== undefined) {
-        prevPositions.set(d.id, { fx: d.fx, fy: d.fy });
-      }
-    });
-    
-    simulationNodes.forEach((node: any, i: number) => {
-      const prevPos = prevPositions.get(node.id);
-      if (prevPos) {
-        // Preserve user-adjusted position
-        node.fx = prevPos.fx;
-        node.fy = prevPos.fy;
-      } else {
-        // Set initial circular position
-        const angle = i * angleStep;
-        node.fx = width / 2 + radius * Math.cos(angle);
-        node.fy = height / 2 + radius * Math.sin(angle);
-      }
-    });
 
     // Create force simulation with minimal movement
     const simulation = d3.forceSimulation(simulationNodes as any)
@@ -177,6 +162,8 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .data(simulationNodes)
       .join('text')
       .attr('class', 'address-label')
+      .attr('x', (d: any) => d.fx)
+      .attr('y', (d: any) => d.fy)
       .attr('text-anchor', 'middle')
       .attr('dy', (d: any) => {
         const balance = Math.abs(d.currentBalance);
@@ -198,6 +185,8 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .data(simulationNodes)
       .join('text')
       .attr('class', 'balance-label')
+      .attr('x', (d: any) => d.fx)
+      .attr('y', (d: any) => d.fy)
       .attr('text-anchor', 'middle')
       .attr('dy', (d: any) => {
         const balance = Math.abs(d.currentBalance);
@@ -305,8 +294,15 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
         .attr('y', d.fy);
     }
 
-    function dragended(event: any) {
+    function dragended(event: any, d: any) {
       d3.select(event.sourceEvent.target).style('cursor', 'grab');
+      
+      // Save all node positions to localStorage
+      const positions: Record<string, {x: number, y: number}> = {};
+      simulationNodes.forEach((node: any) => {
+        positions[node.id] = { x: node.fx, y: node.fy };
+      });
+      localStorage.setItem('networkGraphPositions', JSON.stringify(positions));
     }
 
     return () => {

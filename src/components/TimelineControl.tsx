@@ -61,7 +61,15 @@ export function TimelineControl({
   };
 
   const handlePreviousDay = () => {
-    const currentDayIndex = dayGroups.findIndex(ts => ts >= currentTime);
+    // Find the day that the current time is in or after
+    let currentDayIndex = dayGroups.findIndex(ts => ts > currentTime);
+    
+    // If currentTime is at or past the last day, set index to the last day
+    if (currentDayIndex === -1) {
+      currentDayIndex = dayGroups.length;
+    }
+    
+    // Move to previous day if possible
     if (currentDayIndex > 0) {
       onTimeChange(dayGroups[currentDayIndex - 1]);
     }
@@ -75,7 +83,7 @@ export function TimelineControl({
   };
 
   const currentDayIndex = dayGroups.findIndex(ts => ts > currentTime);
-  const hasPreviousDay = currentDayIndex > 0 || (currentDayIndex === -1 && dayGroups.length > 0);
+  const hasPreviousDay = currentDayIndex === -1 || currentDayIndex > 0;
   const hasNextDay = currentDayIndex !== -1 && currentDayIndex < dayGroups.length;
 
   return (
