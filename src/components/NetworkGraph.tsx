@@ -335,8 +335,8 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       });
     });
 
-    // Time window for showing active transactions (show transactions within 2 seconds)
-    const timeWindow = 2000;
+    // Time window for showing active transactions (show transactions within 1 second)
+    const timeWindow = 1000;
     const activeTransactions = transactions.filter(tx => 
       Math.abs(tx.timestamp - currentTimestamp) <= timeWindow
     );
