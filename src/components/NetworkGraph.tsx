@@ -47,13 +47,20 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
         }
       });
 
-    // Create simulation data
-    const simulationNodes = nodes.map(node => ({
-      ...node,
-      currentBalance: balancesAtTime.get(node.id) || 0,
-      x: width / 2 + (Math.random() - 0.5) * 200,
-      y: height / 2 + (Math.random() - 0.5) * 200
-    }));
+    // Create simulation data and preserve user positions
+    const simulationNodes = nodes.map(node => {
+      const isContract = node.id.includes('.');
+      const contractName = isContract ? node.id.split('.')[1] : '';
+      
+      return {
+        ...node,
+        currentBalance: balancesAtTime.get(node.id) || 0,
+        isContract,
+        contractName,
+        x: width / 2 + (Math.random() - 0.5) * 200,
+        y: height / 2 + (Math.random() - 0.5) * 200
+      };
+    });
 
     const simulationLinks = links.map(link => ({
       source: link.source,
@@ -61,13 +68,30 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       value: link.value
     }));
 
-    // Create stable positions in a circle layout
+    // Create stable positions in a circle layout, but preserve user-adjusted positions
     const angleStep = (2 * Math.PI) / simulationNodes.length;
     const radius = Math.min(width, height) * 0.35;
+    
+    // Store reference to previous positions
+    const prevPositions = new Map<string, {fx: number, fy: number}>();
+    svg.selectAll('circle, rect').each(function(d: any) {
+      if (d && d.id && d.fx !== undefined && d.fy !== undefined) {
+        prevPositions.set(d.id, { fx: d.fx, fy: d.fy });
+      }
+    });
+    
     simulationNodes.forEach((node: any, i: number) => {
-      const angle = i * angleStep;
-      node.fx = width / 2 + radius * Math.cos(angle);
-      node.fy = height / 2 + radius * Math.sin(angle);
+      const prevPos = prevPositions.get(node.id);
+      if (prevPos) {
+        // Preserve user-adjusted position
+        node.fx = prevPos.fx;
+        node.fy = prevPos.fy;
+      } else {
+        // Set initial circular position
+        const angle = i * angleStep;
+        node.fx = width / 2 + radius * Math.cos(angle);
+        node.fy = height / 2 + radius * Math.sin(angle);
+      }
     });
 
     // Create force simulation with minimal movement
@@ -104,30 +128,51 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .attr('stroke-opacity', 0.3)
       .attr('stroke-width', (d: any) => Math.max(1, Math.log(d.value + 1)));
 
-    // Draw nodes
+    // Draw nodes (circles for regular addresses, squares for contracts)
     const node = g.append('g')
-      .selectAll('circle')
+      .selectAll('.node')
       .data(simulationNodes)
-      .join('circle')
-      .attr('class', 'node')
-      .attr('r', (d: any) => {
-        const balance = Math.abs(d.currentBalance);
-        return Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-      })
-      .attr('fill', (d: any) => {
-        return d.currentBalance > 0 
-          ? 'hsl(var(--primary))' 
-          : 'hsl(var(--node-inactive))';
-      })
-      .attr('stroke', 'hsl(var(--primary-glow))')
-      .attr('stroke-width', 2)
-      .style('cursor', 'grab')
+      .join((enter: any) => {
+        return enter.each(function(d: any) {
+          const nodeGroup = d3.select(this.parentNode);
+          const balance = Math.abs(d.currentBalance);
+          const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+          
+          if (d.isContract) {
+            // Square for contracts
+            nodeGroup.append('rect')
+              .attr('class', 'node')
+              .attr('width', size * 2)
+              .attr('height', size * 2)
+              .attr('x', -size)
+              .attr('y', -size)
+              .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
+              .attr('stroke', 'hsl(var(--primary-glow))')
+              .attr('stroke-width', 2)
+              .style('cursor', 'grab')
+              .datum(d);
+          } else {
+            // Circle for regular addresses
+            nodeGroup.append('circle')
+              .attr('class', 'node')
+              .attr('r', size)
+              .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
+              .attr('stroke', 'hsl(var(--primary-glow))')
+              .attr('stroke-width', 2)
+              .style('cursor', 'grab')
+              .datum(d);
+          }
+        });
+      });
+
+    // Apply drag to all nodes
+    g.selectAll('.node')
       .call(d3.drag<any, any>()
         .on('start', dragstarted)
         .on('drag', dragged)
         .on('end', dragended) as any);
 
-    // Add address labels (above nodes)
+    // Add address labels (above nodes) - showing first 5 chars and contract name if applicable
     const addressLabels = g.append('g')
       .selectAll('text.address-label')
       .data(simulationNodes)
@@ -136,14 +181,17 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .attr('text-anchor', 'middle')
       .attr('dy', (d: any) => {
         const balance = Math.abs(d.currentBalance);
-        const radius = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-        return -radius - 5;
+        const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+        return d.isContract ? -size - 20 : -size - 5;
       })
       .attr('fill', 'hsl(var(--primary))')
       .attr('font-size', '10px')
       .attr('font-family', 'monospace')
       .attr('font-weight', 'bold')
-      .text((d: any) => d.id.substring(0, 5));
+      .text((d: any) => {
+        const prefix = d.id.substring(0, 5);
+        return d.isContract ? `${prefix} (${d.contractName})` : prefix;
+      });
 
     // Add balance labels (below nodes)
     const balanceLabels = g.append('g')
@@ -216,9 +264,21 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .attr('x2', (d: any) => d.target.fx)
       .attr('y2', (d: any) => d.target.fy);
 
-    node
+    g.selectAll('circle.node')
       .attr('cx', (d: any) => d.fx)
       .attr('cy', (d: any) => d.fy);
+
+    g.selectAll('rect.node')
+      .attr('x', (d: any) => {
+        const balance = Math.abs(d.currentBalance);
+        const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+        return d.fx - size;
+      })
+      .attr('y', (d: any) => {
+        const balance = Math.abs(d.currentBalance);
+        const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+        return d.fy - size;
+      });
 
     addressLabels
       .attr('x', (d: any) => d.fx)
@@ -237,12 +297,19 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       d.fx = event.x;
       d.fy = event.y;
       
+      const balance = Math.abs(d.currentBalance);
+      const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+      
       // Update node position
-      d3.select(event.sourceEvent.target.parentNode)
-        .selectAll('circle')
+      g.selectAll('circle.node')
         .filter((circleD: any) => circleD.id === d.id)
         .attr('cx', d.fx)
         .attr('cy', d.fy);
+      
+      g.selectAll('rect.node')
+        .filter((rectD: any) => rectD.id === d.id)
+        .attr('x', d.fx - size)
+        .attr('y', d.fy - size);
       
       // Update links
       link
