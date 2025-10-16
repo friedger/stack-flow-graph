@@ -16,6 +16,7 @@ interface TimelineControlProps {
   transactionTimestamps: number[];
   nodes: NetworkNode[];
   timeSeriesData: TimeSeriesBalance[];
+  onDayChange: () => void;
 }
 
 export function TimelineControl({
@@ -28,7 +29,8 @@ export function TimelineControl({
   onReset,
   transactionTimestamps,
   nodes,
-  timeSeriesData
+  timeSeriesData,
+  onDayChange
 }: TimelineControlProps) {
   // Group timestamps by day
   const dayGroups = useMemo(() => {
@@ -70,6 +72,7 @@ export function TimelineControl({
     const previousDays = dayGroups.filter(ts => ts < currentTime);
     if (previousDays.length > 0) {
       onTimeChange(previousDays[previousDays.length - 1]);
+      onDayChange(); // Trigger particle animation
     }
   };
 
@@ -77,6 +80,7 @@ export function TimelineControl({
     const currentDayIndex = dayGroups.findIndex(ts => ts > currentTime);
     if (currentDayIndex !== -1 && currentDayIndex < dayGroups.length) {
       onTimeChange(dayGroups[currentDayIndex]);
+      onDayChange(); // Trigger particle animation
     }
   };
 

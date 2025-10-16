@@ -33,6 +33,7 @@ const Index = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dayGroups, setDayGroups] = useState<number[]>([]);
+  const [manualDayChange, setManualDayChange] = useState(0); // Trigger for manual day navigation
 
   useEffect(() => {
     const loadData = async () => {
@@ -203,6 +204,7 @@ const Index = () => {
             currentTimestamp={currentTime}
             transactions={transactions}
             dayGroups={dayGroups}
+            manualDayChange={manualDayChange}
           />
         </div>
 
@@ -218,6 +220,7 @@ const Index = () => {
           transactionTimestamps={transactions.map((tx) => tx.timestamp)}
           nodes={nodes}
           timeSeriesData={timeSeriesData}
+          onDayChange={() => setManualDayChange(Date.now())}
         />
 
         {/* Transaction Table */}

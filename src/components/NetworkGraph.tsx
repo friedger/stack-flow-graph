@@ -9,9 +9,10 @@ interface NetworkGraphProps {
   currentTimestamp: number;
   transactions: Transaction[];
   dayGroups: number[];
+  manualDayChange?: number;
 }
 
-export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions, dayGroups }: NetworkGraphProps) {
+export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions, dayGroups, manualDayChange }: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -424,7 +425,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
     console.log('Particles created:', particlesCreated);
 
-  }, [nodes, transactions, currentTimestamp, dimensions, dayGroups]);
+  }, [nodes, transactions, currentTimestamp, dimensions, dayGroups, manualDayChange]);
 
   return (
     <svg
