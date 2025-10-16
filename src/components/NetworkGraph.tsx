@@ -388,12 +388,12 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         : Math.min(20, MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / 100));
 
       // Calculate progress (0 to 1) for animation
-      // Each transaction gets its own animation starting when we enter its day
-      const timeSinceTransaction = currentTimestamp - tx.timestamp;
-      const progress = Math.min(1, Math.max(0, timeSinceTransaction / particleAnimationDuration));
+      // Animation starts when we enter the day group, not based on transaction time
+      const timeSinceEnteringDay = currentTimestamp - currentDayStart;
+      const progress = Math.min(1, Math.max(0, timeSinceEnteringDay / particleAnimationDuration));
 
       // Only show particle if it hasn't completed its journey
-      if (progress >= 1 || timeSinceTransaction < 0) return;
+      if (progress >= 1 || timeSinceEnteringDay < 0) return;
 
       particlesCreated++;
 
