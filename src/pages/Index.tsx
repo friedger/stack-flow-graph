@@ -33,7 +33,8 @@ const Index = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dayGroups, setDayGroups] = useState<number[]>([]);
-  const [manualDayChange, setManualDayChange] = useState(0); // Trigger for manual day navigation
+  const [dayChangeTrigger, setDayChangeTrigger] = useState(0); // Trigger for day changes (manual or auto)
+  const [prevDayIndex, setPrevDayIndex] = useState(-1);
 
   useEffect(() => {
     const loadData = async () => {
@@ -94,6 +95,19 @@ const Index = () => {
 
     loadData();
   }, []);
+
+  // Detect day changes during auto-play or manual navigation
+  useEffect(() => {
+    const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
+      const nextDayStart = dayGroups[idx + 1];
+      return currentTime >= dayStart && (!nextDayStart || currentTime < nextDayStart);
+    });
+
+    if (currentDayIndex !== -1 && currentDayIndex !== prevDayIndex) {
+      setDayChangeTrigger(prev => prev + 1);
+      setPrevDayIndex(currentDayIndex);
+    }
+  }, [currentTime, dayGroups, prevDayIndex]);
 
   useEffect(() => {
     if (!isPlaying || dayGroups.length === 0) return;
@@ -204,7 +218,7 @@ const Index = () => {
             currentTimestamp={currentTime}
             transactions={transactions}
             dayGroups={dayGroups}
-            manualDayChange={manualDayChange}
+            dayChangeTrigger={dayChangeTrigger}
           />
         </div>
 
@@ -220,7 +234,7 @@ const Index = () => {
           transactionTimestamps={transactions.map((tx) => tx.timestamp)}
           nodes={nodes}
           timeSeriesData={timeSeriesData}
-          onDayChange={() => setManualDayChange(Date.now())}
+          onDayChange={() => setDayChangeTrigger(prev => prev + 1)}
         />
 
         {/* Transaction Table */}

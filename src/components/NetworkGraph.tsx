@@ -9,10 +9,10 @@ interface NetworkGraphProps {
   currentTimestamp: number;
   transactions: Transaction[];
   dayGroups: number[];
-  manualDayChange?: number;
+  dayChangeTrigger: number;
 }
 
-export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions, dayGroups, manualDayChange }: NetworkGraphProps) {
+export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions, dayGroups, dayChangeTrigger }: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -313,9 +313,9 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
     };
   }, [nodes, links, timeSeriesData, currentTimestamp, dimensions]);
 
-  // Animation effect for moving transaction particles
+  // Animation effect for moving transaction particles - triggered only on day changes
   useEffect(() => {
-    if (!svgRef.current || dimensions.width === 0 || nodes.length === 0) return;
+    if (!svgRef.current || dimensions.width === 0 || nodes.length === 0 || dayChangeTrigger === 0) return;
 
     const svg = d3.select(svgRef.current);
     const g = svg.select('g');
@@ -356,12 +356,10 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       (tx) => tx.timestamp >= currentDayStart && tx.timestamp < nextDayStart
     );
 
-    console.log('Particle animation update:', {
+    console.log('Particle animation triggered:', {
       currentDayIndex,
-      currentDayStart: new Date(currentDayStart).toISOString(),
-      nextDayStart: new Date(nextDayStart).toISOString(),
-      currentTimestamp: new Date(currentTimestamp).toISOString(),
-      activeTransactionsCount: activeTransactions.length
+      activeTransactionsCount: activeTransactions.length,
+      dayChangeTrigger
     });
 
     // Remove old particles
@@ -419,7 +417,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
     console.log('Particles created:', particlesCreated);
 
-  }, [nodes, transactions, currentTimestamp, dimensions, dayGroups, manualDayChange]);
+  }, [nodes, transactions, dimensions, dayGroups, dayChangeTrigger, currentTimestamp]);
 
   return (
     <svg
