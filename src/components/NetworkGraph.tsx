@@ -6,15 +6,15 @@ interface NetworkGraphProps {
   nodes: NetworkNode[];
   links: NetworkLink[];
   timeSeriesData: TimeSeriesBalance[];
-  currentTimestamp: number;
   transactions: Transaction[];
   dayGroups: number[];
   dayChangeTrigger: number;
 }
 
-export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions, dayGroups, dayChangeTrigger }: NetworkGraphProps) {
+export function NetworkGraph({ nodes, links, timeSeriesData, transactions, dayGroups, dayChangeTrigger }: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [lastAnimatedDayIndex, setLastAnimatedDayIndex] = useState<number>(-1);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -37,18 +37,16 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
     const { width, height } = dimensions;
 
-    // Get balances at current timestamp
+    // Get balances at latest timestamp (show final state)
     const balancesAtTime = new Map<string, number>();
     
-    // Find the latest balance for each address up to currentTimestamp
-    timeSeriesData
-      .filter(d => d.timestamp <= currentTimestamp)
-      .forEach(d => {
-        const existing = balancesAtTime.get(d.address);
-        if (!existing || d.timestamp > existing) {
-          balancesAtTime.set(d.address, d.balance);
-        }
-      });
+    // Get the latest balance for each address
+    timeSeriesData.forEach(d => {
+      const existing = balancesAtTime.get(d.address);
+      if (!existing || d.timestamp >= (timeSeriesData.find(ts => ts.address === d.address && ts.balance === existing)?.timestamp || 0)) {
+        balancesAtTime.set(d.address, d.balance);
+      }
+    });
 
     // Load saved positions from localStorage
     const savedPositions = localStorage.getItem('networkGraphPositions');
@@ -311,7 +309,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
     return () => {
       tooltip.remove();
     };
-  }, [nodes, links, timeSeriesData, currentTimestamp, dimensions]);
+  }, [nodes, links, timeSeriesData, dimensions]);
 
   // Animation effect for moving transaction particles - triggered only on day changes
   useEffect(() => {
@@ -319,6 +317,24 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
     const svg = d3.select(svgRef.current);
     const g = svg.select('g');
+    
+    // Find the current day group based on dayChangeTrigger
+    // The dayChangeTrigger increments when the day changes, so we can derive the current day
+    const currentDayIndex = Math.min(dayChangeTrigger - 1, dayGroups.length - 1);
+    
+    // Only animate if this day hasn't been animated yet
+    if (currentDayIndex === lastAnimatedDayIndex || currentDayIndex < 0) {
+      return;
+    }
+
+    console.log('Animating day:', {
+      currentDayIndex,
+      lastAnimatedDayIndex,
+      dayChangeTrigger
+    });
+
+    // Update the last animated day
+    setLastAnimatedDayIndex(currentDayIndex);
     
     // Load positions
     const savedPositions = localStorage.getItem('networkGraphPositions');
@@ -337,30 +353,13 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       });
     });
 
-    // Find the current day group
-    const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
-      const nextDayStart = dayGroups[idx + 1];
-      return currentTimestamp >= dayStart && (!nextDayStart || currentTimestamp < nextDayStart);
-    });
-
-    if (currentDayIndex === -1) {
-      g.selectAll('.transaction-particle').remove();
-      return;
-    }
-
     const currentDayStart = dayGroups[currentDayIndex];
-    const nextDayStart = dayGroups[currentDayIndex + 1] || currentTimestamp + 86400000;
+    const nextDayStart = dayGroups[currentDayIndex + 1] || (currentDayStart + 86400000);
 
     // Get all transactions from the current day group
     const activeTransactions = transactions.filter(
       (tx) => tx.timestamp >= currentDayStart && tx.timestamp < nextDayStart
     );
-
-    console.log('Particle animation triggered:', {
-      currentDayIndex,
-      activeTransactionsCount: activeTransactions.length,
-      dayChangeTrigger
-    });
 
     // Remove old particles
     g.selectAll('.transaction-particle').remove();
@@ -415,9 +414,9 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         .remove();
     });
 
-    console.log('Particles created:', particlesCreated);
+    console.log('Particles created:', particlesCreated, 'for day index:', currentDayIndex);
 
-  }, [nodes, transactions, dimensions, dayGroups, dayChangeTrigger]);
+  }, [nodes, transactions, dimensions, dayGroups, dayChangeTrigger, lastAnimatedDayIndex]);
 
   return (
     <svg

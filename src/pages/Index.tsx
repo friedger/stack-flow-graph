@@ -215,7 +215,6 @@ const Index = () => {
             nodes={nodes} 
             links={links} 
             timeSeriesData={timeSeriesData} 
-            currentTimestamp={currentTime}
             transactions={transactions}
             dayGroups={dayGroups}
             dayChangeTrigger={dayChangeTrigger}
