@@ -139,7 +139,13 @@ const Index = () => {
 
         {/* Network Graph */}
         <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg" style={{ height: "600px" }}>
-          <NetworkGraph nodes={nodes} links={links} timeSeriesData={timeSeriesData} currentTimestamp={currentTime} />
+          <NetworkGraph 
+            nodes={nodes} 
+            links={links} 
+            timeSeriesData={timeSeriesData} 
+            currentTimestamp={currentTime}
+            transactions={transactions}
+          />
         </div>
 
         {/* Timeline Control */}

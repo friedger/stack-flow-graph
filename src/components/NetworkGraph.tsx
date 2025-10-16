@@ -1,15 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { NetworkNode, NetworkLink, TimeSeriesBalance } from '@/utils/parseTransactions';
+import { NetworkNode, NetworkLink, TimeSeriesBalance, Transaction } from '@/utils/parseTransactions';
 
 interface NetworkGraphProps {
   nodes: NetworkNode[];
   links: NetworkLink[];
   timeSeriesData: TimeSeriesBalance[];
   currentTimestamp: number;
+  transactions: Transaction[];
 }
 
-export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }: NetworkGraphProps) {
+export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, transactions }: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
@@ -309,6 +310,78 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       tooltip.remove();
     };
   }, [nodes, links, timeSeriesData, currentTimestamp, dimensions]);
+
+  // Animation effect for moving transaction particles
+  useEffect(() => {
+    if (!svgRef.current || dimensions.width === 0 || nodes.length === 0) return;
+
+    const svg = d3.select(svgRef.current);
+    const g = svg.select('g');
+    
+    // Load positions
+    const savedPositions = localStorage.getItem('networkGraphPositions');
+    const positionsMap = savedPositions ? JSON.parse(savedPositions) : {};
+    
+    // Get node positions
+    const nodePositions = new Map<string, {x: number, y: number}>();
+    nodes.forEach((node, i) => {
+      const angleStep = (2 * Math.PI) / nodes.length;
+      const radius = Math.min(dimensions.width, dimensions.height) * 0.35;
+      const angle = i * angleStep;
+      const savedPos = positionsMap[node.id];
+      nodePositions.set(node.id, {
+        x: savedPos?.x ?? (dimensions.width / 2 + radius * Math.cos(angle)),
+        y: savedPos?.y ?? (dimensions.height / 2 + radius * Math.sin(angle))
+      });
+    });
+
+    // Time window for showing active transactions (show transactions within 2 seconds)
+    const timeWindow = 2000;
+    const activeTransactions = transactions.filter(tx => 
+      Math.abs(tx.timestamp - currentTimestamp) <= timeWindow
+    );
+
+    // Remove old particles
+    g.selectAll('.transaction-particle').remove();
+
+    // Create particles for active transactions
+    const particleGroup = g.append('g').attr('class', 'transaction-particles');
+
+    activeTransactions.forEach(tx => {
+      const sourcePos = nodePositions.get(tx.sender);
+      const targetPos = nodePositions.get(tx.recipient);
+      
+      if (!sourcePos || !targetPos) return;
+
+      // Calculate particle size based on amount
+      const MIN_PARTICLE_SIZE = 3;
+      const amountInSTX = tx.amount / 1000000;
+      const particleSize = amountInSTX < 100 
+        ? MIN_PARTICLE_SIZE 
+        : Math.min(20, MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / 100));
+
+      // Calculate progress (0 to 1) based on when transaction happened
+      const timeSinceTx = currentTimestamp - tx.timestamp;
+      const progress = Math.min(1, Math.max(0, (timeSinceTx + timeWindow) / (timeWindow * 2)));
+
+      // Interpolate position
+      const currentX = sourcePos.x + (targetPos.x - sourcePos.x) * progress;
+      const currentY = sourcePos.y + (targetPos.y - sourcePos.y) * progress;
+
+      // Create particle
+      particleGroup.append('circle')
+        .attr('class', 'transaction-particle')
+        .attr('cx', currentX)
+        .attr('cy', currentY)
+        .attr('r', particleSize)
+        .attr('fill', 'hsl(var(--accent))')
+        .attr('stroke', 'hsl(var(--accent-glow))')
+        .attr('stroke-width', 1.5)
+        .style('opacity', Math.sin(progress * Math.PI)) // Fade in and out
+        .style('filter', 'drop-shadow(0 0 4px hsl(var(--accent)))');
+    });
+
+  }, [nodes, transactions, currentTimestamp, dimensions]);
 
   return (
     <svg
