@@ -1,0 +1,88 @@
+import { Card } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Transaction } from '@/utils/parseTransactions';
+
+interface TransactionTableProps {
+  transactions: Transaction[];
+  currentTimestamp: number;
+}
+
+export function TransactionTable({ transactions, currentTimestamp }: TransactionTableProps) {
+  // Filter transactions up to current timestamp and get last 20
+  const visibleTransactions = transactions
+    .filter(tx => tx.timestamp <= currentTimestamp)
+    .slice(-20)
+    .reverse();
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatAddress = (address: string) => {
+    return `${address.substring(0, 8)}...${address.substring(address.length - 6)}`;
+  };
+
+  const formatAmount = (amount: number) => {
+    return (amount / 1000000).toFixed(2);
+  };
+
+  return (
+    <Card className="p-6 bg-card border-border">
+      <h3 className="text-lg font-semibold text-foreground mb-4">Recent Transactions</h3>
+      <div className="rounded-md border border-border overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Time</TableHead>
+              <TableHead>From</TableHead>
+              <TableHead>To</TableHead>
+              <TableHead className="text-right">Amount (STX)</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {visibleTransactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  No transactions yet
+                </TableCell>
+              </TableRow>
+            ) : (
+              visibleTransactions.map((tx, idx) => (
+                <TableRow key={idx}>
+                  <TableCell className="font-mono text-xs">
+                    {formatDate(tx.timestamp)}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-primary">
+                    {formatAddress(tx.sender)}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-primary">
+                    {formatAddress(tx.recipient)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">
+                    {formatAmount(tx.amount)}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      <div className="mt-2 text-xs text-muted-foreground text-right">
+        Showing last 20 transactions
+      </div>
+    </Card>
+  );
+}

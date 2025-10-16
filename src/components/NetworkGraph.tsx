@@ -61,18 +61,26 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       value: link.value
     }));
 
-    // Create force simulation
+    // Create stable positions in a circle layout
+    const angleStep = (2 * Math.PI) / simulationNodes.length;
+    const radius = Math.min(width, height) * 0.35;
+    simulationNodes.forEach((node: any, i: number) => {
+      const angle = i * angleStep;
+      node.fx = width / 2 + radius * Math.cos(angle);
+      node.fy = height / 2 + radius * Math.sin(angle);
+    });
+
+    // Create force simulation with minimal movement
     const simulation = d3.forceSimulation(simulationNodes as any)
       .force('link', d3.forceLink(simulationLinks)
         .id((d: any) => d.id)
         .distance(150)
-        .strength(0.3))
-      .force('charge', d3.forceManyBody().strength(-500))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      .force('collision', d3.forceCollide().radius((d: any) => {
-        const balance = Math.abs(d.currentBalance);
-        return Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-      }));
+        .strength(0))
+      .force('charge', d3.forceManyBody().strength(0))
+      .force('center', d3.forceCenter(width / 2, height / 2).strength(0))
+      .alpha(0)
+      .alphaDecay(0)
+      .stop();
 
     // Create container group
     const g = svg.append('g');
@@ -113,18 +121,32 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       })
       .attr('stroke', 'hsl(var(--primary-glow))')
       .attr('stroke-width', 2)
-      .style('cursor', 'pointer')
-      .call(d3.drag<any, any>()
-        .on('start', dragstarted)
-        .on('drag', dragged)
-        .on('end', dragended) as any);
+      .style('cursor', 'pointer');
 
-    // Add labels
-    const labels = g.append('g')
-      .selectAll('text')
+    // Add address labels (above nodes)
+    const addressLabels = g.append('g')
+      .selectAll('text.address-label')
       .data(simulationNodes)
       .join('text')
-      .attr('class', 'label')
+      .attr('class', 'address-label')
+      .attr('text-anchor', 'middle')
+      .attr('dy', (d: any) => {
+        const balance = Math.abs(d.currentBalance);
+        const radius = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+        return -radius - 5;
+      })
+      .attr('fill', 'hsl(var(--primary))')
+      .attr('font-size', '10px')
+      .attr('font-family', 'monospace')
+      .attr('font-weight', 'bold')
+      .text((d: any) => d.id.substring(0, 5));
+
+    // Add balance labels (below nodes)
+    const balanceLabels = g.append('g')
+      .selectAll('text.balance-label')
+      .data(simulationNodes)
+      .join('text')
+      .attr('class', 'balance-label')
       .attr('text-anchor', 'middle')
       .attr('dy', (d: any) => {
         const balance = Math.abs(d.currentBalance);
@@ -183,42 +205,26 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
           .attr('stroke', 'hsl(var(--primary-glow))');
       });
 
-    // Update positions on tick
-    simulation.on('tick', () => {
-      link
-        .attr('x1', (d: any) => d.source.x)
-        .attr('y1', (d: any) => d.source.y)
-        .attr('x2', (d: any) => d.target.x)
-        .attr('y2', (d: any) => d.target.y);
+    // Position elements initially
+    link
+      .attr('x1', (d: any) => d.source.fx)
+      .attr('y1', (d: any) => d.source.fy)
+      .attr('x2', (d: any) => d.target.fx)
+      .attr('y2', (d: any) => d.target.fy);
 
-      node
-        .attr('cx', (d: any) => d.x)
-        .attr('cy', (d: any) => d.y);
+    node
+      .attr('cx', (d: any) => d.fx)
+      .attr('cy', (d: any) => d.fy);
 
-      labels
-        .attr('x', (d: any) => d.x)
-        .attr('y', (d: any) => d.y);
-    });
+    addressLabels
+      .attr('x', (d: any) => d.fx)
+      .attr('y', (d: any) => d.fy);
 
-    function dragstarted(event: any) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    }
-
-    function dragged(event: any) {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    }
-
-    function dragended(event: any) {
-      if (!event.active) simulation.alphaTarget(0);
-      event.subject.fx = null;
-      event.subject.fy = null;
-    }
+    balanceLabels
+      .attr('x', (d: any) => d.fx)
+      .attr('y', (d: any) => d.fy);
 
     return () => {
-      simulation.stop();
       tooltip.remove();
     };
   }, [nodes, links, timeSeriesData, currentTimestamp, dimensions]);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NetworkGraph } from '@/components/NetworkGraph';
 import { TimelineControl } from '@/components/TimelineControl';
 import { StatsPanel } from '@/components/StatsPanel';
+import { TransactionTable } from '@/components/TransactionTable';
 import {
   parseTransactionData,
   calculateNetworkData,
@@ -151,6 +152,13 @@ const Index = () => {
           isPlaying={isPlaying}
           onPlayPause={handlePlayPause}
           onReset={handleReset}
+          transactionTimestamps={transactions.map(tx => tx.timestamp)}
+        />
+
+        {/* Transaction Table */}
+        <TransactionTable
+          transactions={transactions}
+          currentTimestamp={currentTime}
         />
 
         {/* Footer Info */}

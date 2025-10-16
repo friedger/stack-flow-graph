@@ -11,6 +11,7 @@ interface TimelineControlProps {
   isPlaying: boolean;
   onPlayPause: () => void;
   onReset: () => void;
+  transactionTimestamps: number[];
 }
 
 export function TimelineControl({
@@ -20,7 +21,8 @@ export function TimelineControl({
   onTimeChange,
   isPlaying,
   onPlayPause,
-  onReset
+  onReset,
+  transactionTimestamps
 }: TimelineControlProps) {
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString('en-US', {
@@ -66,14 +68,29 @@ export function TimelineControl({
         </div>
 
         <div className="space-y-2">
-          <Slider
-            value={[currentTime]}
-            min={minTime}
-            max={maxTime}
-            step={(maxTime - minTime) / 1000}
-            onValueChange={handleSliderChange}
-            className="w-full"
-          />
+          <div className="relative">
+            <Slider
+              value={[currentTime]}
+              min={minTime}
+              max={maxTime}
+              step={(maxTime - minTime) / 1000}
+              onValueChange={handleSliderChange}
+              className="w-full"
+            />
+            {/* Transaction markers */}
+            <div className="absolute top-1/2 left-0 right-0 h-6 pointer-events-none -translate-y-1/2">
+              {transactionTimestamps.map((timestamp, idx) => {
+                const position = ((timestamp - minTime) / (maxTime - minTime)) * 100;
+                return (
+                  <div
+                    key={idx}
+                    className="absolute w-0.5 h-6 bg-primary/40"
+                    style={{ left: `${position}%` }}
+                  />
+                );
+              })}
+            </div>
+          </div>
           
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>{formatDate(minTime)}</span>
