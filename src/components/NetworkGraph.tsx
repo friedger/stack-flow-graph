@@ -129,48 +129,47 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .attr('stroke-width', (d: any) => Math.max(1, Math.log(d.value + 1)));
 
     // Draw nodes (circles for regular addresses, squares for contracts)
-    const node = g.append('g')
-      .selectAll('.node')
-      .data(simulationNodes)
-      .join((enter: any) => {
-        return enter.each(function(d: any) {
-          const nodeGroup = d3.select(this.parentNode);
-          const balance = Math.abs(d.currentBalance);
-          const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-          
-          if (d.isContract) {
-            // Square for contracts
-            nodeGroup.append('rect')
-              .attr('class', 'node')
-              .attr('width', size * 2)
-              .attr('height', size * 2)
-              .attr('x', -size)
-              .attr('y', -size)
-              .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
-              .attr('stroke', 'hsl(var(--primary-glow))')
-              .attr('stroke-width', 2)
-              .style('cursor', 'grab')
-              .datum(d);
-          } else {
-            // Circle for regular addresses
-            nodeGroup.append('circle')
-              .attr('class', 'node')
-              .attr('r', size)
-              .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
-              .attr('stroke', 'hsl(var(--primary-glow))')
-              .attr('stroke-width', 2)
-              .style('cursor', 'grab')
-              .datum(d);
-          }
-        });
-      });
-
-    // Apply drag to all nodes
-    g.selectAll('.node')
-      .call(d3.drag<any, any>()
-        .on('start', dragstarted)
-        .on('drag', dragged)
-        .on('end', dragended) as any);
+    const nodeGroup = g.append('g').attr('class', 'nodes');
+    
+    simulationNodes.forEach((d: any) => {
+      const balance = Math.abs(d.currentBalance);
+      const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+      
+      if (d.isContract) {
+        // Square for contracts
+        nodeGroup.append('rect')
+          .attr('class', 'node')
+          .attr('width', size * 2)
+          .attr('height', size * 2)
+          .attr('x', d.fx - size)
+          .attr('y', d.fy - size)
+          .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
+          .attr('stroke', 'hsl(var(--primary-glow))')
+          .attr('stroke-width', 2)
+          .style('cursor', 'grab')
+          .datum(d)
+          .call(d3.drag<any, any>()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended) as any);
+      } else {
+        // Circle for regular addresses
+        nodeGroup.append('circle')
+          .attr('class', 'node')
+          .attr('r', size)
+          .attr('cx', d.fx)
+          .attr('cy', d.fy)
+          .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
+          .attr('stroke', 'hsl(var(--primary-glow))')
+          .attr('stroke-width', 2)
+          .style('cursor', 'grab')
+          .datum(d)
+          .call(d3.drag<any, any>()
+            .on('start', dragstarted)
+            .on('drag', dragged)
+            .on('end', dragended) as any);
+      }
+    });
 
     // Add address labels (above nodes) - showing first 5 chars and contract name if applicable
     const addressLabels = g.append('g')
@@ -228,7 +227,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
       .style('z-index', '1000')
       .style('box-shadow', 'var(--shadow-card)');
 
-    node
+    g.selectAll('.node')
       .on('mouseover', function(event, d: any) {
         tooltip.style('visibility', 'visible')
           .html(`
@@ -257,36 +256,12 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp }:
           .attr('stroke', 'hsl(var(--primary-glow))');
       });
 
-    // Position elements initially
+    // Position links initially
     link
       .attr('x1', (d: any) => d.source.fx)
       .attr('y1', (d: any) => d.source.fy)
       .attr('x2', (d: any) => d.target.fx)
       .attr('y2', (d: any) => d.target.fy);
-
-    g.selectAll('circle.node')
-      .attr('cx', (d: any) => d.fx)
-      .attr('cy', (d: any) => d.fy);
-
-    g.selectAll('rect.node')
-      .attr('x', (d: any) => {
-        const balance = Math.abs(d.currentBalance);
-        const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-        return d.fx - size;
-      })
-      .attr('y', (d: any) => {
-        const balance = Math.abs(d.currentBalance);
-        const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-        return d.fy - size;
-      });
-
-    addressLabels
-      .attr('x', (d: any) => d.fx)
-      .attr('y', (d: any) => d.fy);
-
-    balanceLabels
-      .attr('x', (d: any) => d.fx)
-      .attr('y', (d: any) => d.fy);
 
     // Drag functions
     function dragstarted(event: any, d: any) {
