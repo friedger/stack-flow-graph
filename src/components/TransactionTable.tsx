@@ -78,7 +78,7 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
                       href={getExplorerAddressUrl(tx.sender)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                     >
                       {formatAddress(tx.sender)}
                     </a>
@@ -88,7 +88,7 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
                       href={getExplorerAddressUrl(tx.recipient)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 text-accent hover:bg-accent/20 transition-colors border border-accent/20"
                     >
                       {formatAddress(tx.recipient)}
                     </a>
