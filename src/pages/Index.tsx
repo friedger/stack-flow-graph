@@ -97,40 +97,50 @@ const Index = () => {
   useEffect(() => {
     if (!isPlaying || dayGroups.length === 0) return;
 
-    // Find the current day group index
-    const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
-      const nextDayStart = dayGroups[idx + 1];
-      return currentTime >= dayStart && (!nextDayStart || currentTime < nextDayStart);
-    });
-
     // Minimum duration for each day group (1 second)
     const minDayDuration = 1000;
+    const stepInterval = 50; // Update every 50ms for smooth animation
 
     const interval = setInterval(() => {
       setCurrentTime((prev) => {
-        // Find which day group we're in
-        const dayIndex = dayGroups.findIndex((dayStart, idx) => {
+        // Find which day group we're currently in
+        const currentDayIndex = dayGroups.findIndex((dayStart, idx) => {
           const nextDayStart = dayGroups[idx + 1];
           return prev >= dayStart && (!nextDayStart || prev < nextDayStart);
         });
 
-        if (dayIndex === -1 || dayIndex >= dayGroups.length - 1) {
-          // We're at or past the last day group
+        if (currentDayIndex === -1) {
+          // Before first day, jump to first day
+          return dayGroups[0];
+        }
+
+        if (currentDayIndex >= dayGroups.length - 1) {
+          // We're in the last day group
           if (prev >= maxTime) {
             setIsPlaying(false);
             return maxTime;
           }
-          return maxTime;
+          // Continue to max time smoothly
+          return Math.min(prev + (stepInterval * 10), maxTime);
         }
 
-        // Move to the next day group
-        const nextDayStart = dayGroups[dayIndex + 1];
-        return nextDayStart;
+        // Calculate time spent in current day group
+        const currentDayStart = dayGroups[currentDayIndex];
+        const nextDayStart = dayGroups[currentDayIndex + 1];
+        const timeInCurrentDay = prev - currentDayStart;
+
+        if (timeInCurrentDay >= minDayDuration) {
+          // Move to next day group
+          return nextDayStart;
+        }
+
+        // Continue in current day, increment by small step
+        return Math.min(prev + (stepInterval * 10), nextDayStart);
       });
-    }, minDayDuration);
+    }, stepInterval);
 
     return () => clearInterval(interval);
-  }, [isPlaying, dayGroups, currentTime, maxTime]);
+  }, [isPlaying, dayGroups, maxTime]);
 
   const handlePlayPause = () => {
     if (currentTime >= maxTime) {
