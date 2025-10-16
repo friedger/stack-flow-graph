@@ -29,6 +29,7 @@ export interface TimeSeriesBalance {
 }
 
 const MIN_STX_THRESHOLD = 100000;
+const SEPT_15_START = new Date("2025-09-15T00:00:00Z").getTime();
 
 export function parseCSVLine(line: string): string[] {
   const result: string[] = [];
@@ -103,8 +104,7 @@ export async function parseTransactionData(csvFiles: Array<{ name: string; conte
       }
     }
   }
-  const sept15Start = new Date("2025-09-15T00:00:00Z").getTime();
-  return allTransactions.filter((t) => t.timestamp > sept15Start).sort((a, b) => a.timestamp - b.timestamp);
+  return allTransactions.filter((t) => t.timestamp > SEPT_15_START).sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export function calculateNetworkData(transactions: Transaction[]) {
@@ -164,7 +164,13 @@ export function calculateTimeSeriesBalances(
   initialBalances?: Map<string, number>,
 ): TimeSeriesBalance[] {
   const balances = new Map<string, number>();
-  const timeSeriesData: TimeSeriesBalance[] = [];
+  const timeSeriesData: TimeSeriesBalance[] = [
+    {
+      timestamp: SEPT_15_START,
+      address: "",
+      balance: 0,
+    },
+  ];
 
   // Initialize balances (with initial balances if provided)
   filteredAddresses.forEach((addr) => {
