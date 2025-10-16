@@ -47,7 +47,17 @@ const Index = () => {
         const networkData = calculateNetworkData(parsedTransactions);
         
         const filteredAddresses = new Set(networkData.nodes.map(n => n.id));
-        const timeSeries = calculateTimeSeriesBalances(parsedTransactions, filteredAddresses);
+        
+        // Set initial balance for SP000...sip-031 contract (200m STX on Sept 17, 2025)
+        const initialBalances = new Map<string, number>();
+        const sip031Address = Array.from(filteredAddresses).find(addr => 
+          addr.startsWith('SP000') && addr.includes('.sip-031')
+        );
+        if (sip031Address) {
+          initialBalances.set(sip031Address, 200000000);
+        }
+        
+        const timeSeries = calculateTimeSeriesBalances(parsedTransactions, filteredAddresses, initialBalances);
 
         setTransactions(parsedTransactions);
         setNodes(networkData.nodes);
@@ -55,7 +65,8 @@ const Index = () => {
         setTimeSeriesData(timeSeries);
 
         if (parsedTransactions.length > 0) {
-          const minTimestamp = parsedTransactions[0].timestamp;
+          // Start timeline on September 15th, 2025
+          const minTimestamp = new Date('2025-09-15T00:00:00Z').getTime();
           const maxTimestamp = parsedTransactions[parsedTransactions.length - 1].timestamp;
           setMinTime(minTimestamp);
           setMaxTime(maxTimestamp);

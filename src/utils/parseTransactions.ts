@@ -156,13 +156,16 @@ export function calculateNetworkData(transactions: Transaction[]) {
 
 export function calculateTimeSeriesBalances(
   transactions: Transaction[],
-  filteredAddresses: Set<string>
+  filteredAddresses: Set<string>,
+  initialBalances?: Map<string, number>
 ): TimeSeriesBalance[] {
   const balances = new Map<string, number>();
   const timeSeriesData: TimeSeriesBalance[] = [];
   
-  // Initialize balances
-  filteredAddresses.forEach(addr => balances.set(addr, 0));
+  // Initialize balances (with initial balances if provided)
+  filteredAddresses.forEach(addr => {
+    balances.set(addr, initialBalances?.get(addr) || 0);
+  });
   
   // Process transactions chronologically
   transactions.forEach(tx => {
