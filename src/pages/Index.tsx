@@ -11,6 +11,7 @@ import {
   NetworkNode,
   NetworkLink,
   TimeSeriesBalance,
+  isSIP031Address,
 } from "@/utils/parseTransactions";
 import { Loader2 } from "lucide-react";
 
@@ -50,9 +51,7 @@ const Index = () => {
 
         // Set initial balance for SP000...sip-031 contract (200m STX on Sept 17, 2025)
         const initialBalances = new Map<string, number>();
-        const sip031Address = Array.from(filteredAddresses).find(
-          (addr) => addr.startsWith("SP000") && addr.includes(".sip-031"),
-        );
+        const sip031Address = Array.from(filteredAddresses).find((addr) => isSIP031Address(addr));
         if (sip031Address) {
           initialBalances.set(sip031Address, 200000000);
         }
@@ -153,6 +152,8 @@ const Index = () => {
           onPlayPause={handlePlayPause}
           onReset={handleReset}
           transactionTimestamps={transactions.map((tx) => tx.timestamp)}
+          nodes={nodes}
+          timeSeriesData={timeSeriesData}
         />
 
         {/* Transaction Table */}

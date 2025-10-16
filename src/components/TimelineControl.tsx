@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMemo } from 'react';
+import { NetworkNode, TimeSeriesBalance, isSIP031Address } from '@/utils/parseTransactions';
 
 interface TimelineControlProps {
   minTime: number;
@@ -13,6 +14,8 @@ interface TimelineControlProps {
   onPlayPause: () => void;
   onReset: () => void;
   transactionTimestamps: number[];
+  nodes: NetworkNode[];
+  timeSeriesData: TimeSeriesBalance[];
 }
 
 export function TimelineControl({
@@ -23,7 +26,9 @@ export function TimelineControl({
   isPlaying,
   onPlayPause,
   onReset,
-  transactionTimestamps
+  transactionTimestamps,
+  nodes,
+  timeSeriesData
 }: TimelineControlProps) {
   // Group timestamps by day
   const dayGroups = useMemo(() => {
@@ -77,6 +82,21 @@ export function TimelineControl({
 
   const hasPreviousDay = dayGroups.some(ts => ts < currentTime);
   const hasNextDay = dayGroups.some(ts => ts > currentTime);
+
+  // Calculate total STX balance excluding SIP-031 address
+  const totalSTXBalance = useMemo(() => {
+    // Find the latest balance for each address at or before currentTime
+    const latestBalances = new Map<string, number>();
+    
+    timeSeriesData.forEach(data => {
+      if (data.timestamp <= currentTime && data.address && !isSIP031Address(data.address)) {
+        latestBalances.set(data.address, data.balance);
+      }
+    });
+
+    const total = Array.from(latestBalances.values()).reduce((sum, balance) => sum + balance, 0);
+    return total / 1000000; // Convert to millions of STX
+  }, [currentTime, timeSeriesData]);
 
   return (
     <Card className="p-6 bg-card border-border">
@@ -169,11 +189,17 @@ export function TimelineControl({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
+        <div className="grid grid-cols-3 gap-4 pt-2 border-t border-border">
           <div>
             <div className="text-xs text-muted-foreground">Progress</div>
             <div className="text-lg font-semibold text-foreground">
               {Math.round(((currentTime - minTime) / (maxTime - minTime)) * 100)}%
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground">Total STX (excl. SIP-031)</div>
+            <div className="text-lg font-semibold text-primary">
+              {totalSTXBalance.toFixed(2)}M STX
             </div>
           </div>
           <div>

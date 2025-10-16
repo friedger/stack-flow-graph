@@ -31,6 +31,10 @@ export interface TimeSeriesBalance {
 const MIN_STX_THRESHOLD = 100000;
 const SEPT_15_START = new Date("2025-09-15T00:00:00Z").getTime();
 
+export function isSIP031Address(address: string): boolean {
+  return address.startsWith("SP000") && address.includes(".sip-031");
+}
+
 export function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
@@ -178,9 +182,7 @@ export function calculateTimeSeriesBalances(
   });
 
   // Find sip-031 contract address for daily rewards
-  const sip031Address = Array.from(filteredAddresses).find(
-    (addr) => addr.startsWith("SP000") && addr.includes(".sip-031"),
-  );
+  const sip031Address = Array.from(filteredAddresses).find((addr) => isSIP031Address(addr));
   const sept17Start = new Date("2025-09-17T00:00:00Z").getTime();
   const dailyReward = 68400;
 
