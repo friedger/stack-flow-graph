@@ -6,6 +6,7 @@ export interface Transaction {
   amount: number;
   type: 'send' | 'receive';
   ownerAddress: string;
+  txId: string;
 }
 
 export interface NetworkNode {
@@ -72,6 +73,7 @@ export async function parseTransactionData(csvFiles: Array<{ name: string; conte
       const sender = fields[16];
       const recipient = fields[17];
       const burnDate = fields[1];
+      const txId = fields[12];
       
       // Only process STX transactions
       if (inSymbol === 'STX' && inAmount > 0 && sender) {
@@ -82,7 +84,8 @@ export async function parseTransactionData(csvFiles: Array<{ name: string; conte
           recipient: ownerAddress,
           amount: inAmount,
           type: 'receive',
-          ownerAddress
+          ownerAddress,
+          txId
         });
       }
       
@@ -94,7 +97,8 @@ export async function parseTransactionData(csvFiles: Array<{ name: string; conte
           recipient: recipient,
           amount: outAmount,
           type: 'send',
-          ownerAddress
+          ownerAddress,
+          txId
         });
       }
     }

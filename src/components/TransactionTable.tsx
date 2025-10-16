@@ -36,7 +36,15 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
   };
 
   const formatAmount = (amount: number) => {
-    return (amount / 1000000).toFixed(2);
+    return (amount / 1000000).toFixed(6);
+  };
+
+  const getExplorerAddressUrl = (address: string) => {
+    return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
+  };
+
+  const getExplorerTxUrl = (txId: string) => {
+    return `https://explorer.hiro.so/txid/${txId}?chain=mainnet`;
   };
 
   return (
@@ -49,7 +57,7 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
               <TableHead>Time</TableHead>
               <TableHead>From</TableHead>
               <TableHead>To</TableHead>
-              <TableHead className="text-right">Amount (STX)</TableHead>
+              <TableHead className="text-right">Amount (M STX)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -63,13 +71,34 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
               visibleTransactions.map((tx, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="font-mono text-xs">
-                    {formatDate(tx.timestamp)}
+                    <a 
+                      href={getExplorerTxUrl(tx.txId)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {formatDate(tx.timestamp)}
+                    </a>
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-primary">
-                    {formatAddress(tx.sender)}
+                  <TableCell className="font-mono text-xs">
+                    <a 
+                      href={getExplorerAddressUrl(tx.sender)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {formatAddress(tx.sender)}
+                    </a>
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-primary">
-                    {formatAddress(tx.recipient)}
+                  <TableCell className="font-mono text-xs">
+                    <a 
+                      href={getExplorerAddressUrl(tx.recipient)} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      {formatAddress(tx.recipient)}
+                    </a>
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     {formatAmount(tx.amount)}
