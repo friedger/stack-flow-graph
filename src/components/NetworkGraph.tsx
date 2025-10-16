@@ -388,39 +388,33 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         ? MIN_PARTICLE_SIZE 
         : Math.min(20, MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / 100));
 
-      // Calculate progress (0 to 1) for animation
-      // Animation starts when we enter the day group, not based on transaction time
-      const timeSinceEnteringDay = currentTimestamp - currentDayStart;
-      const progress = Math.min(1, Math.max(0, timeSinceEnteringDay / particleAnimationDuration));
-
-      // Only show particle if it hasn't completed its journey
-      if (progress >= 1 || timeSinceEnteringDay < 0) return;
-
       particlesCreated++;
 
-      // Interpolate position
-      const currentX = sourcePos.x + (targetPos.x - sourcePos.x) * progress;
-      const currentY = sourcePos.y + (targetPos.y - sourcePos.y) * progress;
-
-      // Fade in at start, fade out at end
-      let opacity = 0.8;
-      if (progress < 0.1) {
-        opacity = progress * 10 * 0.8;
-      } else if (progress > 0.9) {
-        opacity = (1 - progress) * 10 * 0.8;
-      }
-
-      // Create particle
-      particleGroup.append('circle')
+      // Create particle at source position
+      const particle = particleGroup.append('circle')
         .attr('class', 'transaction-particle')
-        .attr('cx', currentX)
-        .attr('cy', currentY)
+        .attr('cx', sourcePos.x)
+        .attr('cy', sourcePos.y)
         .attr('r', particleSize)
         .attr('fill', 'hsl(var(--accent))')
         .attr('stroke', 'hsl(var(--accent-glow))')
         .attr('stroke-width', 1.5)
-        .style('opacity', opacity)
+        .style('opacity', 0)
         .style('filter', 'drop-shadow(0 0 4px hsl(var(--accent)))');
+
+      // Animate particle from source to target
+      particle
+        .transition()
+        .duration(100)
+        .style('opacity', 0.8)
+        .transition()
+        .duration(particleAnimationDuration - 200)
+        .attr('cx', targetPos.x)
+        .attr('cy', targetPos.y)
+        .transition()
+        .duration(100)
+        .style('opacity', 0)
+        .remove();
     });
 
     console.log('Particles created:', particlesCreated);
