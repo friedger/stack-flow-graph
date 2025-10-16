@@ -417,7 +417,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
     console.log('Particles created:', particlesCreated);
 
-  }, [nodes, transactions, dimensions, dayGroups, dayChangeTrigger, currentTimestamp]);
+  }, [nodes, transactions, dimensions, dayGroups, dayChangeTrigger]);
 
   return (
     <svg
