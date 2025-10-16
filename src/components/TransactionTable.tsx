@@ -1,13 +1,6 @@
-import { Card } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Transaction } from '@/utils/parseTransactions';
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Transaction } from "@/utils/parseTransactions";
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -17,17 +10,17 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, currentTimestamp }: TransactionTableProps) {
   // Filter transactions up to current timestamp, exclude amounts <= 10 STX, and get last 20
   const visibleTransactions = transactions
-    .filter(tx => tx.timestamp <= currentTimestamp && tx.amount > 10000000)
+    .filter((tx) => tx.timestamp <= currentTimestamp && tx.amount > 10)
     .slice(-20)
     .reverse();
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -71,9 +64,9 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
               visibleTransactions.map((tx, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="font-mono text-xs">
-                    <a 
-                      href={getExplorerTxUrl(tx.txId)} 
-                      target="_blank" 
+                    <a
+                      href={getExplorerTxUrl(tx.txId)}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
@@ -81,9 +74,9 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
                     </a>
                   </TableCell>
                   <TableCell className="font-mono text-xs">
-                    <a 
-                      href={getExplorerAddressUrl(tx.sender)} 
-                      target="_blank" 
+                    <a
+                      href={getExplorerAddressUrl(tx.sender)}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
@@ -91,27 +84,23 @@ export function TransactionTable({ transactions, currentTimestamp }: Transaction
                     </a>
                   </TableCell>
                   <TableCell className="font-mono text-xs">
-                    <a 
-                      href={getExplorerAddressUrl(tx.recipient)} 
-                      target="_blank" 
+                    <a
+                      href={getExplorerAddressUrl(tx.recipient)}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline"
                     >
                       {formatAddress(tx.recipient)}
                     </a>
                   </TableCell>
-                  <TableCell className="text-right font-mono">
-                    {formatAmount(tx.amount)}
-                  </TableCell>
+                  <TableCell className="text-right font-mono">{formatAmount(tx.amount)}</TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="mt-2 text-xs text-muted-foreground text-right">
-        Showing last 20 transactions
-      </div>
+      <div className="mt-2 text-xs text-muted-foreground text-right">Showing last 20 transactions</div>
     </Card>
   );
 }
