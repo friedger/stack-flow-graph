@@ -8,9 +8,9 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ transactions, currentTimestamp }: TransactionTableProps) {
-  // Filter transactions up to current timestamp, exclude amounts <= 10 STX, and get last 20
+  // Filter transactions up to current timestamp and get last 20
   const visibleTransactions = transactions
-    .filter((tx) => tx.timestamp <= currentTimestamp && tx.amount > 10)
+    .filter((tx) => tx.timestamp <= currentTimestamp)
     .slice(-20)
     .reverse();
 

@@ -29,10 +29,15 @@ export interface TimeSeriesBalance {
 }
 
 const MIN_STX_THRESHOLD = 100000;
+const MIN_TRANSACTION_AMOUNT = 10; // Minimum transaction amount in STX
 const SEPT_15_START = new Date("2025-09-15T00:00:00Z").getTime();
 
 export function isSIP031Address(address: string): boolean {
   return address.startsWith("SP000") && address.includes(".sip-031");
+}
+
+export function shouldIncludeTransaction(amount: number): boolean {
+  return amount > MIN_TRANSACTION_AMOUNT;
 }
 
 export function parseCSVLine(line: string): string[] {
@@ -108,7 +113,9 @@ export async function parseTransactionData(csvFiles: Array<{ name: string; conte
       }
     }
   }
-  return allTransactions.filter((t) => t.timestamp > SEPT_15_START).sort((a, b) => a.timestamp - b.timestamp);
+  return allTransactions
+    .filter((t) => t.timestamp > SEPT_15_START && shouldIncludeTransaction(t.amount))
+    .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export function calculateNetworkData(transactions: Transaction[]) {
