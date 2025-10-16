@@ -335,11 +335,12 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       });
     });
 
-    // Time window for showing active transactions (show transactions within 1 second)
+    // Time window for showing active transactions (1 second animation duration)
     const timeWindow = 1000;
-    const activeTransactions = transactions.filter(tx => 
-      Math.abs(tx.timestamp - currentTimestamp) <= timeWindow
-    );
+    const activeTransactions = transactions.filter(tx => {
+      const timeSinceTx = currentTimestamp - tx.timestamp;
+      return timeSinceTx >= 0 && timeSinceTx <= timeWindow;
+    });
 
     // Remove old particles
     g.selectAll('.transaction-particle').remove();
@@ -362,7 +363,7 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
       // Calculate progress (0 to 1) based on when transaction happened
       const timeSinceTx = currentTimestamp - tx.timestamp;
-      const progress = Math.min(1, Math.max(0, (timeSinceTx + timeWindow) / (timeWindow * 2)));
+      const progress = Math.min(1, Math.max(0, timeSinceTx / timeWindow));
 
       // Interpolate position
       const currentX = sourcePos.x + (targetPos.x - sourcePos.x) * progress;
