@@ -355,6 +355,14 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
       (tx) => tx.timestamp >= currentDayStart && tx.timestamp < nextDayStart
     );
 
+    console.log('Particle animation update:', {
+      currentDayIndex,
+      currentDayStart: new Date(currentDayStart).toISOString(),
+      nextDayStart: new Date(nextDayStart).toISOString(),
+      currentTimestamp: new Date(currentTimestamp).toISOString(),
+      activeTransactionsCount: activeTransactions.length
+    });
+
     // Remove old particles
     g.selectAll('.transaction-particle').remove();
 
@@ -363,6 +371,8 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
     // Particle animation duration (2 seconds)
     const particleAnimationDuration = 2000;
+
+    let particlesCreated = 0;
 
     activeTransactions.forEach(tx => {
       const sourcePos = nodePositions.get(tx.sender);
@@ -384,6 +394,8 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
 
       // Only show particle if it hasn't completed its journey
       if (progress >= 1 || timeSinceTransaction < 0) return;
+
+      particlesCreated++;
 
       // Interpolate position
       const currentX = sourcePos.x + (targetPos.x - sourcePos.x) * progress;
@@ -409,6 +421,8 @@ export function NetworkGraph({ nodes, links, timeSeriesData, currentTimestamp, t
         .style('opacity', opacity)
         .style('filter', 'drop-shadow(0 0 4px hsl(var(--accent)))');
     });
+
+    console.log('Particles created:', particlesCreated);
 
   }, [nodes, transactions, currentTimestamp, dimensions, dayGroups]);
 
