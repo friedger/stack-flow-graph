@@ -27,10 +27,14 @@ export interface TimeSeriesBalance {
   address: string;
   balance: number;
 }
+export type TimeSeries = Map<number, Map<string, number>>;
 
 const MIN_STX_THRESHOLD = 100000;
 const MIN_TRANSACTION_AMOUNT = 10; // Minimum transaction amount in STX
-const SEPT_15_START = new Date("2025-09-15T00:00:00Z").getTime();
+export const SEPT_15_START = new Date("2025-09-15T00:00:00Z").getTime();
+export const DAILY_REWARD = 68400;
+export const SIP_031_ADDRESS = "SP000000000000000000002Q6VF78.sip-031";
+export const DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
 
 export function isSIP031Address(address: string): boolean {
   return address.startsWith("SP000") && address.includes(".sip-031");
@@ -62,11 +66,15 @@ export function parseCSVLine(line: string): string[] {
   return result;
 }
 
-export async function parseTransactionData(csvFiles: Array<{ name: string; content: string }>) {
+export async function parseTransactionData(
+  csvFiles: Array<{ name: string; content: string }>
+) {
   const allTransactions: Transaction[] = [];
 
   for (const file of csvFiles) {
-    const ownerAddress = file.name.replace("transactions-", "").replace(".csv", "");
+    const ownerAddress = file.name
+      .replace("transactions-", "")
+      .replace(".csv", "");
     const lines = file.content.split("\n");
 
     // Skip header row
@@ -114,41 +122,44 @@ export async function parseTransactionData(csvFiles: Array<{ name: string; conte
     }
   }
   return allTransactions
-    .filter((t) => t.timestamp > SEPT_15_START && shouldIncludeTransaction(t.amount))
+    .filter(
+      (t) => t.timestamp > SEPT_15_START && shouldIncludeTransaction(t.amount)
+    )
     .sort((a, b) => a.timestamp - b.timestamp);
 }
 
 export function calculateNetworkData(transactions: Transaction[]) {
-  const addressTotals = new Map<string, { sent: number; received: number }>();
-  const links = new Map<string, number>();
+  const addressTotals: Record<string, { sent: number; received: number }> = {};
+  const links: Record<string, number> = {};
 
   // Calculate totals
   transactions.forEach((tx) => {
     // Track sender
-    const senderData = addressTotals.get(tx.sender) || { sent: 0, received: 0 };
-    senderData.sent += tx.amount;
-    addressTotals.set(tx.sender, senderData);
+    if (!addressTotals[tx.sender])
+      addressTotals[tx.sender] = { sent: 0, received: 0 };
+    addressTotals[tx.sender].sent += tx.amount;
 
     // Track recipient
-    const recipientData = addressTotals.get(tx.recipient) || { sent: 0, received: 0 };
-    recipientData.received += tx.amount;
-    addressTotals.set(tx.recipient, recipientData);
+    if (!addressTotals[tx.recipient])
+      addressTotals[tx.recipient] = { sent: 0, received: 0 };
+    addressTotals[tx.recipient].received += tx.amount;
 
     // Track link
     const linkKey = `${tx.sender}->${tx.recipient}`;
-    links.set(linkKey, (links.get(linkKey) || 0) + tx.amount);
+    links[linkKey] = (links[linkKey] || 0) + tx.amount;
   });
 
   // Filter addresses by threshold
-  const filteredAddresses = Array.from(addressTotals.entries())
+  const filteredAddresses = Object.entries(addressTotals)
     .filter(([_, data]) => data.sent + data.received >= MIN_STX_THRESHOLD)
     .map(([address]) => address);
 
-  const filteredAddressSet = new Set(filteredAddresses);
+  const filteredAddressSet: Record<string, boolean> = {};
+  filteredAddresses.forEach((addr) => (filteredAddressSet[addr] = true));
 
   // Create nodes
   const nodes: NetworkNode[] = filteredAddresses.map((address) => {
-    const data = addressTotals.get(address)!;
+    const data = addressTotals[address]!;
     return {
       id: address,
       balance: data.received - data.sent,
@@ -159,9 +170,9 @@ export function calculateNetworkData(transactions: Transaction[]) {
 
   // Create links (only between filtered addresses)
   const networkLinks: NetworkLink[] = [];
-  links.forEach((value, key) => {
+  Object.entries(links).forEach(([key, value]) => {
     const [source, target] = key.split("->");
-    if (filteredAddressSet.has(source) && filteredAddressSet.has(target)) {
+    if (filteredAddressSet[source] && filteredAddressSet[target]) {
       networkLinks.push({ source, target, value });
     }
   });
@@ -169,59 +180,73 @@ export function calculateNetworkData(transactions: Transaction[]) {
   return { nodes, links: networkLinks };
 }
 
-export function calculateTimeSeriesBalances(
-  transactions: Transaction[],
-  filteredAddresses: Set<string>,
-  initialBalances?: Map<string, number>,
-): TimeSeriesBalance[] {
-  const balances = new Map<string, number>();
-  const timeSeriesData: TimeSeriesBalance[] = [
-    {
-      timestamp: SEPT_15_START,
-      address: "",
-      balance: 0,
-    },
-  ];
+export function calculateGroupBalances(
+  orderedTransactions: Transaction[],
+  nodeAddresses: Set<string>,
+  initialBalances?: Map<string, number>
+): TimeSeries {
+  const timeSeriesData: TimeSeries = new Map();
+  let previousTimestamp = orderedTransactions[0].timestamp - DAY_IN_MILLIS;
 
   // Initialize balances (with initial balances if provided)
-  filteredAddresses.forEach((addr) => {
+  let balances: Map<string, number> = new Map<string, number>();
+  nodeAddresses.forEach((addr) => {
     balances.set(addr, initialBalances?.get(addr) || 0);
   });
 
-  // Find sip-031 contract address for daily rewards
-  const sip031Address = Array.from(filteredAddresses).find((addr) => isSIP031Address(addr));
-  const sept17Start = new Date("2025-09-17T00:00:00Z").getTime();
-  const dailyReward = 68400;
-
   // Process transactions chronologically
-  transactions.forEach((tx) => {
-    if (filteredAddresses.has(tx.sender)) {
+  orderedTransactions.forEach((tx) => {
+    const newGroup = tx.timestamp >= previousTimestamp + DAY_IN_MILLIS;
+    console.log("new group", newGroup, tx.timestamp);
+    if (newGroup) {
+      // Snapshot all balances at previous timestamp
+      nodeAddresses.forEach((addr) => {
+        let balance = balances.get(addr) || 0;
+
+        // Add daily rewards for sip-031 contract
+        // only add dailyRewards for the first tx of the day
+        if (addr === SIP_031_ADDRESS && previousTimestamp > SEPT_15_START) {
+          const daysSinceSept17 = Math.floor(
+            (previousTimestamp - SEPT_15_START) / DAY_IN_MILLIS
+          );
+          balance += daysSinceSept17 * DAILY_REWARD;
+        }
+        balances.set(addr, balance);
+      });
+      // Save snapshot
+      timeSeriesData.set(previousTimestamp, balances);
+      console.log(previousTimestamp, balances);
+      balances = new Map(balances.entries());
+      previousTimestamp = tx.timestamp;
+    }
+
+    // update balances for sender and receiver
+    if (nodeAddresses.has(tx.sender)) {
       const current = balances.get(tx.sender) || 0;
       balances.set(tx.sender, current - tx.amount);
     }
 
-    if (filteredAddresses.has(tx.recipient)) {
+    if (nodeAddresses.has(tx.recipient)) {
       const current = balances.get(tx.recipient) || 0;
       balances.set(tx.recipient, current + tx.amount);
     }
-
-    // Snapshot all balances at this timestamp
-    filteredAddresses.forEach((addr) => {
-      let balance = balances.get(addr) || 0;
-
-      // Add daily rewards for sip-031 contract
-      if (addr === sip031Address && tx.timestamp > sept17Start) {
-        const daysSinceSept17 = Math.floor((tx.timestamp - sept17Start) / (24 * 60 * 60 * 1000));
-        balance += daysSinceSept17 * dailyReward;
-      }
-
-      timeSeriesData.push({
-        timestamp: tx.timestamp,
-        address: addr,
-        balance: balance,
-      });
-    });
   });
+
+  // Snapshot all balances at this timestamp
+  nodeAddresses.forEach((addr) => {
+    let balance = balances.get(addr) || 0;
+
+    // Add daily rewards for sip-031 contract
+    // only add dailyRewards for the first tx of the day
+    if (addr === SIP_031_ADDRESS && previousTimestamp > SEPT_15_START) {
+      const daysSinceSept17 = Math.floor(
+        (previousTimestamp - SEPT_15_START) / DAY_IN_MILLIS
+      );
+      balance += daysSinceSept17 * DAILY_REWARD;
+    }
+    balances.set(addr, balance);
+  });
+  timeSeriesData.set(previousTimestamp, balances);
 
   return timeSeriesData;
 }

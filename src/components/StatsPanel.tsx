@@ -1,19 +1,38 @@
 import { Card } from '@/components/ui/card';
-import { NetworkNode } from '@/utils/parseTransactions';
+import { NetworkNode, isSIP031Address } from '@/utils/parseTransactions';
+import { useMemo } from 'react';
 
 interface StatsPanelProps {
   nodes: NetworkNode[];
   totalTransactions: number;
   currentTimestamp: number;
+  dayGroups: number[];
+  timeSeriesData: Map<number, Map<string, number>>;
 }
 
-export function StatsPanel({ nodes, totalTransactions, currentTimestamp }: StatsPanelProps) {
-  const totalSent = nodes.reduce((sum, node) => sum + node.sent, 0);
-  const totalReceived = nodes.reduce((sum, node) => sum + node.received, 0);
-  const totalVolume = totalSent;
+export function StatsPanel({ nodes, totalTransactions, currentTimestamp, dayGroups, timeSeriesData }: StatsPanelProps) {
+  // Calculate total STX balance excluding SIP-031 address
+  const totalSTXBalance = useMemo(() => {
+    // Find the latest balance for each address at or before currentTimestamp
+    let index = 0;
+    for (let i = 0; i < dayGroups.length; i++) {
+      if (dayGroups[i] <= currentTimestamp) {
+        index = i;
+      }
+    }
+    const balancesAtTime: Map<string, number> = timeSeriesData.get(dayGroups[index]) || new Map();
+    let total = 0;
+    balancesAtTime.forEach((balance, addr) => {
+      if (isSIP031Address(addr)) {
+        return;
+      }
+      total += balance;
+    });
+    return total / 1000000; // Convert to millions of STX
+  }, [currentTimestamp, dayGroups, timeSeriesData]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className="p-4 bg-card border-border">
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">Active Addresses</p>
@@ -24,9 +43,9 @@ export function StatsPanel({ nodes, totalTransactions, currentTimestamp }: Stats
 
       <Card className="p-4 bg-card border-border">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Total Volume</p>
-          <p className="text-2xl font-bold text-foreground">
-            {(totalVolume / 1000000).toFixed(2)}M
+          <p className="text-xs text-muted-foreground">Total STX (excl. SIP-031)</p>
+          <p className="text-2xl font-bold text-primary">
+            {totalSTXBalance.toFixed(2)}M
           </p>
           <p className="text-xs text-accent">STX</p>
         </div>
@@ -34,21 +53,8 @@ export function StatsPanel({ nodes, totalTransactions, currentTimestamp }: Stats
 
       <Card className="p-4 bg-card border-border">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Total Sent</p>
-          <p className="text-2xl font-bold text-foreground">
-            {(totalSent / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-destructive">STX</p>
-        </div>
-      </Card>
-
-      <Card className="p-4 bg-card border-border">
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Total Received</p>
-          <p className="text-2xl font-bold text-foreground">
-            {(totalReceived / 1000000).toFixed(2)}M
-          </p>
-          <p className="text-xs text-primary">STX</p>
+          <p className="text-xs text-muted-foreground">Total Transactions</p>
+          <p className="text-2xl font-bold text-foreground">{totalTransactions}</p>
         </div>
       </Card>
     </div>

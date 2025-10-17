@@ -1,0 +1,65 @@
+import { describe } from "vitest";
+import { loadDataFromFiles } from "./loadData";
+
+describe("Verify time series with all data", () => {
+  it("should create correct tx groups", async () => {
+    const {
+      groups,
+      timeSeries,
+      networkData: { nodes },
+    } = await loadDataFromFiles();
+    expect(Array.from(timeSeries.keys()).length).toBe(groups.length);
+  });
+
+  it("should create correct group balances", async () => {
+    const {
+      groups,
+      timeSeries,
+      networkData: { nodes },
+    } = await loadDataFromFiles();
+    expect(groups).toStrictEqual([
+      1758117395000, 1758203795000, 1758668090000, 1758920239000, 1759192355000,
+      1759279144000, 1759395366000, 1759760018000, 1760129546000,
+    ]);
+    expect(Object.fromEntries(timeSeries.get(groups[0]).entries())).toStrictEqual({
+      "SP000000000000000000002Q6VF78.sip-031": 200136800,
+      SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 0,
+      SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 0,
+      SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC: 0,
+      "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.pool-vault": 0,
+      SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES: 0,
+      "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core": 0,
+    });
+
+
+     expect(Object.fromEntries(timeSeries.get(groups[2]).entries())).toStrictEqual({
+      "SP000000000000000000002Q6VF78.sip-031": 93554283.333,
+      SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 101334916.667,
+      SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 500000.9249999998,
+      SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC: 2799950,
+      "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.pool-vault": 2699999.075,
+      SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES: 0,
+      "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core": 0,
+    });
+
+     expect(Object.fromEntries(timeSeries.get(groups[groups.length - 1]).entries())).toStrictEqual({
+      "SP000000000000000000002Q6VF78.sip-031": 100736283.333,
+      SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 78334916.667,
+      SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 1700000.9250000007,
+      SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC: 7255044.887,
+      "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.pool-vault": 13114854.188000001,
+      SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES: 6530000,
+      "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core": 400000,
+    });
+
+    expect(nodes.map((n) => n.id)).toStrictEqual([
+      "SP000000000000000000002Q6VF78.sip-031",
+      "SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045",
+      "SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC",
+      "SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC",
+      "SP2VCQJGH7PHP2DJK7Z0V48AGBHQAW3R3ZW1QF4N.pool-vault",
+      "SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES",
+      "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core",
+    ]);
+  });
+});

@@ -1,9 +1,17 @@
-import { Slider } from '@/components/ui/slider';
-import { Card } from '@/components/ui/card';
-import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useMemo } from 'react';
-import { NetworkNode, TimeSeriesBalance, isSIP031Address } from '@/utils/parseTransactions';
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import {
+  NetworkNode,
+  TimeSeries
+} from "@/utils/parseTransactions";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Pause,
+  Play,
+  RotateCcw,
+} from "lucide-react";
 
 interface TimelineControlProps {
   minTime: number;
@@ -13,10 +21,9 @@ interface TimelineControlProps {
   isPlaying: boolean;
   onPlayPause: () => void;
   onReset: () => void;
-  transactionTimestamps: number[];
-  nodes: NetworkNode[];
-  timeSeriesData: TimeSeriesBalance[];
-  onDayChange: () => void;
+  dayGroups: number[];
+  onDayChange: (step: number) => void;
+  currentGroupIndex: number;
 }
 
 export function TimelineControl({
@@ -27,39 +34,25 @@ export function TimelineControl({
   isPlaying,
   onPlayPause,
   onReset,
-  transactionTimestamps,
-  nodes,
-  timeSeriesData,
-  onDayChange
+  dayGroups,
+  onDayChange,
+  currentGroupIndex,
 }: TimelineControlProps) {
-  // Group timestamps by day
-  const dayGroups = useMemo(() => {
-    const groups = new Map<string, number>();
-    transactionTimestamps.forEach(ts => {
-      const date = new Date(ts);
-      const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-      if (!groups.has(dayKey)) {
-        groups.set(dayKey, ts);
-      }
-    });
-    return Array.from(groups.values()).sort((a, b) => a - b);
-  }, [transactionTimestamps]);
-
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const formatDayOnly = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
@@ -68,46 +61,29 @@ export function TimelineControl({
   };
 
   const handlePreviousDay = () => {
-    // Find the last day marker that is before the current time
-    const previousDays = dayGroups.filter(ts => ts < currentTime);
-    if (previousDays.length > 0) {
-      onTimeChange(previousDays[previousDays.length - 1]);
-      onDayChange(); // Trigger particle animation
+    if (currentGroupIndex > 0) {
+      onDayChange(-1);
     }
   };
 
   const handleNextDay = () => {
-    const currentDayIndex = dayGroups.findIndex(ts => ts > currentTime);
-    if (currentDayIndex !== -1 && currentDayIndex < dayGroups.length) {
-      onTimeChange(dayGroups[currentDayIndex]);
-      onDayChange(); // Trigger particle animation
+    if (currentGroupIndex < dayGroups.length - 1) {
+      onDayChange(1);
     }
   };
 
-  const hasPreviousDay = dayGroups.some(ts => ts < currentTime);
-  const hasNextDay = dayGroups.some(ts => ts > currentTime);
+  const hasPreviousDay = currentGroupIndex > 0;
+  const hasNextDay = currentGroupIndex < dayGroups.length - 1;
 
-  // Calculate total STX balance excluding SIP-031 address
-  const totalSTXBalance = useMemo(() => {
-    // Find the latest balance for each address at or before currentTime
-    const latestBalances = new Map<string, number>();
-    
-    timeSeriesData.forEach(data => {
-      if (data.timestamp <= currentTime && data.address && !isSIP031Address(data.address)) {
-        latestBalances.set(data.address, data.balance);
-      }
-    });
-
-    const total = Array.from(latestBalances.values()).reduce((sum, balance) => sum + balance, 0);
-    return total / 1000000; // Convert to millions of STX
-  }, [currentTime, timeSeriesData]);
 
   return (
     <Card className="p-6 bg-card border-border">
       <div className="space-y-4">
         <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">Timeline Control</h3>
-          
+          <h3 className="text-lg font-semibold text-foreground">
+            Timeline Control
+          </h3>
+
           {/* Day Navigation */}
           <div className="flex items-center gap-2 justify-center">
             <Button
@@ -118,7 +94,7 @@ export function TimelineControl({
               className="gap-1"
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous Day
+              Previous
             </Button>
             <Button
               variant="outline"
@@ -127,7 +103,7 @@ export function TimelineControl({
               disabled={!hasNextDay}
               className="gap-1"
             >
-              Next Day
+              Next
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -162,7 +138,8 @@ export function TimelineControl({
             {/* Day group markers - positioned above the slider */}
             <div className="absolute top-0 left-0 right-0 h-6 pointer-events-none">
               {dayGroups.map((timestamp, idx) => {
-                const position = ((timestamp - minTime) / (maxTime - minTime)) * 100;
+                const position =
+                  ((timestamp - minTime) / (maxTime - minTime)) * 100;
                 return (
                   <div
                     key={idx}
@@ -175,7 +152,7 @@ export function TimelineControl({
                 );
               })}
             </div>
-            
+
             <Slider
               value={[currentTime]}
               min={minTime}
@@ -185,10 +162,12 @@ export function TimelineControl({
               className="w-full"
             />
           </div>
-          
+
           <div className="flex justify-between text-sm text-muted-foreground pt-1">
             <span>{formatDate(minTime)}</span>
-            <span className="font-mono text-primary font-semibold">{formatDate(currentTime)}</span>
+            <span className="font-mono text-primary font-semibold">
+              {formatDate(currentTime)}
+            </span>
             <span>{formatDate(maxTime)}</span>
           </div>
         </div>
@@ -197,13 +176,10 @@ export function TimelineControl({
           <div>
             <div className="text-xs text-muted-foreground">Progress</div>
             <div className="text-lg font-semibold text-foreground">
-              {Math.round(((currentTime - minTime) / (maxTime - minTime)) * 100)}%
-            </div>
-          </div>
-          <div>
-            <div className="text-xs text-muted-foreground">Total STX (excl. SIP-031)</div>
-            <div className="text-lg font-semibold text-primary">
-              {totalSTXBalance.toFixed(2)}M STX
+              {Math.round(
+                ((currentTime - minTime) / (maxTime - minTime)) * 100
+              )}
+              %
             </div>
           </div>
           <div>

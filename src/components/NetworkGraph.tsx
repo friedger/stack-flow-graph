@@ -1,17 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
-import * as d3 from 'd3';
-import { NetworkNode, NetworkLink, TimeSeriesBalance, Transaction } from '@/utils/parseTransactions';
+import {
+  DAY_IN_MILLIS,
+  NetworkLink,
+  NetworkNode,
+  TimeSeries,
+  Transaction
+} from "@/utils/parseTransactions";
+import * as d3 from "d3";
+import { useEffect, useRef, useState } from "react";
 
 interface NetworkGraphProps {
   nodes: NetworkNode[];
   links: NetworkLink[];
-  timeSeriesData: TimeSeriesBalance[];
+  timeSeriesData: TimeSeries;
   transactions: Transaction[];
   dayGroups: number[];
-  dayChangeTrigger: number;
+  currentGroupIndex: number;
 }
 
-export function NetworkGraph({ nodes, links, timeSeriesData, transactions, dayGroups, dayChangeTrigger }: NetworkGraphProps) {
+export function NetworkGraph({
+  nodes,
+  links,
+  timeSeriesData,
+  transactions,
+  dayGroups,
+  currentGroupIndex,
+}: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [lastAnimatedDayIndex, setLastAnimatedDayIndex] = useState<number>(-1);
@@ -25,336 +38,367 @@ export function NetworkGraph({ nodes, links, timeSeriesData, transactions, dayGr
     };
 
     updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
   useEffect(() => {
     if (!svgRef.current || dimensions.width === 0 || nodes.length === 0) return;
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
+    svg.selectAll("*").remove();
 
     const { width, height } = dimensions;
 
-    // Get balances at latest timestamp (show final state)
-    const balancesAtTime = new Map<string, number>();
-    
-    // Get the latest balance for each address
-    timeSeriesData.forEach(d => {
-      const existing = balancesAtTime.get(d.address);
-      if (!existing || d.timestamp >= (timeSeriesData.find(ts => ts.address === d.address && ts.balance === existing)?.timestamp || 0)) {
-        balancesAtTime.set(d.address, d.balance);
-      }
-    });
+    const balancesAtTime = timeSeriesData.get(dayGroups[currentGroupIndex]);
+    console.log("networkgraph", currentGroupIndex, dayGroups[currentGroupIndex]);
 
     // Load saved positions from localStorage
-    const savedPositions = localStorage.getItem('networkGraphPositions');
+    const savedPositions = localStorage.getItem("networkGraphPositions");
     const positionsMap = savedPositions ? JSON.parse(savedPositions) : {};
 
     // Create simulation data and preserve user positions
     const simulationNodes = nodes.map((node, i) => {
-      const isContract = node.id.includes('.');
-      const contractName = isContract ? node.id.split('.')[1] : '';
-      
+      const isContract = node.id.includes(".");
+      const contractName = isContract ? node.id.split(".")[1] : "";
+
       // Try to use saved position, otherwise use circular layout
       const angleStep = (2 * Math.PI) / nodes.length;
       const radius = Math.min(width, height) * 0.35;
       const angle = i * angleStep;
-      
+
       const savedPos = positionsMap[node.id];
-      
+
       return {
         ...node,
         currentBalance: balancesAtTime.get(node.id) || 0,
         isContract,
         contractName,
-        fx: savedPos?.x ?? (width / 2 + radius * Math.cos(angle)),
-        fy: savedPos?.y ?? (height / 2 + radius * Math.sin(angle))
+        fx: savedPos?.x ?? width / 2 + radius * Math.cos(angle),
+        fy: savedPos?.y ?? height / 2 + radius * Math.sin(angle),
       };
     });
 
-    const simulationLinks = links.map(link => ({
+    const simulationLinks = links.map((link) => ({
       source: link.source,
       target: link.target,
-      value: link.value
+      value: link.value,
     }));
 
     // Create force simulation with minimal movement
-    const simulation = d3.forceSimulation(simulationNodes as any)
-      .force('link', d3.forceLink(simulationLinks)
-        .id((d: any) => d.id)
-        .distance(150)
-        .strength(0))
-      .force('charge', d3.forceManyBody().strength(0))
-      .force('center', d3.forceCenter(width / 2, height / 2).strength(0))
+    const simulation = d3
+      .forceSimulation(simulationNodes as any)
+      .force(
+        "link",
+        d3
+          .forceLink(simulationLinks)
+          .id((d: any) => d.id)
+          .distance(150)
+          .strength(0)
+      )
+      .force("charge", d3.forceManyBody().strength(0))
+      .force("center", d3.forceCenter(width / 2, height / 2).strength(0))
       .alpha(0)
       .alphaDecay(0)
       .stop();
 
     // Create container group
-    const g = svg.append('g');
+    const g = svg.append("g");
 
     // Add zoom behavior
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
       });
 
     svg.call(zoom as any);
 
     // Draw links
-    const link = g.append('g')
-      .selectAll('line')
+    const link = g
+      .append("g")
+      .selectAll("line")
       .data(simulationLinks)
-      .join('line')
-      .attr('class', 'link')
-      .attr('stroke', 'hsl(var(--link-color))')
-      .attr('stroke-opacity', 0.3)
-      .attr('stroke-width', (d: any) => Math.max(1, Math.log(d.value + 1)));
+      .join("line")
+      .attr("class", "link")
+      .attr("stroke", "hsl(var(--link-color))")
+      .attr("stroke-opacity", 0.3)
+      .attr("stroke-width", (d: any) => Math.max(1, Math.log(d.value + 1)));
 
     // Draw nodes (circles for regular addresses, squares for contracts)
-    const nodeGroup = g.append('g').attr('class', 'nodes');
-    
+    const nodeGroup = g.append("g").attr("class", "nodes");
+
     simulationNodes.forEach((d: any) => {
       const balance = Math.abs(d.currentBalance);
       const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-      
+
       if (d.isContract) {
         // Square for contracts
-        nodeGroup.append('rect')
-          .attr('class', 'node')
-          .attr('width', size * 2)
-          .attr('height', size * 2)
-          .attr('x', d.fx - size)
-          .attr('y', d.fy - size)
-          .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
-          .attr('stroke', 'hsl(var(--primary-glow))')
-          .attr('stroke-width', 2)
-          .style('cursor', 'grab')
+        nodeGroup
+          .append("rect")
+          .attr("class", "node")
+          .attr("width", size * 2)
+          .attr("height", size * 2)
+          .attr("x", d.fx - size)
+          .attr("y", d.fy - size)
+          .attr(
+            "fill",
+            d.currentBalance > 0
+              ? "hsl(var(--primary))"
+              : "hsl(var(--node-inactive))"
+          )
+          .attr("stroke", "hsl(var(--primary-glow))")
+          .attr("stroke-width", 2)
+          .style("cursor", "grab")
           .datum(d)
-          .call(d3.drag<any, any>()
-            .on('start', dragstarted)
-            .on('drag', dragged)
-            .on('end', dragended) as any);
+          .call(
+            d3
+              .drag<any, any>()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended) as any
+          );
       } else {
         // Circle for regular addresses
-        nodeGroup.append('circle')
-          .attr('class', 'node')
-          .attr('r', size)
-          .attr('cx', d.fx)
-          .attr('cy', d.fy)
-          .attr('fill', d.currentBalance > 0 ? 'hsl(var(--primary))' : 'hsl(var(--node-inactive))')
-          .attr('stroke', 'hsl(var(--primary-glow))')
-          .attr('stroke-width', 2)
-          .style('cursor', 'grab')
+        nodeGroup
+          .append("circle")
+          .attr("class", "node")
+          .attr("r", size)
+          .attr("cx", d.fx)
+          .attr("cy", d.fy)
+          .attr(
+            "fill",
+            d.currentBalance > 0
+              ? "hsl(var(--primary))"
+              : "hsl(var(--node-inactive))"
+          )
+          .attr("stroke", "hsl(var(--primary-glow))")
+          .attr("stroke-width", 2)
+          .style("cursor", "grab")
           .datum(d)
-          .call(d3.drag<any, any>()
-            .on('start', dragstarted)
-            .on('drag', dragged)
-            .on('end', dragended) as any);
+          .call(
+            d3
+              .drag<any, any>()
+              .on("start", dragstarted)
+              .on("drag", dragged)
+              .on("end", dragended) as any
+          );
       }
     });
 
     // Add address labels (above nodes) - showing first 5 chars and contract name if applicable
-    const addressLabels = g.append('g')
-      .selectAll('text.address-label')
+    const addressLabels = g
+      .append("g")
+      .selectAll("text.address-label")
       .data(simulationNodes)
-      .join('text')
-      .attr('class', 'address-label')
-      .attr('x', (d: any) => d.fx)
-      .attr('y', (d: any) => d.fy)
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d: any) => {
+      .join("text")
+      .attr("class", "address-label")
+      .attr("x", (d: any) => d.fx)
+      .attr("y", (d: any) => d.fy)
+      .attr("text-anchor", "middle")
+      .attr("dy", (d: any) => {
         const balance = Math.abs(d.currentBalance);
         const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
         return d.isContract ? -size - 20 : -size - 5;
       })
-      .attr('fill', 'hsl(var(--primary))')
-      .attr('font-size', '10px')
-      .attr('font-family', 'monospace')
-      .attr('font-weight', 'bold')
+      .attr("fill", "hsl(var(--primary))")
+      .attr("font-size", "10px")
+      .attr("font-family", "monospace")
+      .attr("font-weight", "bold")
       .text((d: any) => {
         const prefix = d.id.substring(0, 5);
         return d.isContract ? `${prefix} (${d.contractName})` : prefix;
       });
 
     // Add balance labels (below nodes)
-    const balanceLabels = g.append('g')
-      .selectAll('text.balance-label')
+    const balanceLabels = g
+      .append("g")
+      .selectAll("text.balance-label")
       .data(simulationNodes)
-      .join('text')
-      .attr('class', 'balance-label')
-      .attr('x', (d: any) => d.fx)
-      .attr('y', (d: any) => d.fy)
-      .attr('text-anchor', 'middle')
-      .attr('dy', (d: any) => {
+      .join("text")
+      .attr("class", "balance-label")
+      .attr("x", (d: any) => d.fx)
+      .attr("y", (d: any) => d.fy)
+      .attr("text-anchor", "middle")
+      .attr("dy", (d: any) => {
         const balance = Math.abs(d.currentBalance);
         const radius = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
         return radius + 15;
       })
-      .attr('fill', 'hsl(var(--foreground))')
-      .attr('font-size', '11px')
-      .attr('font-family', 'monospace')
+      .attr("fill", "hsl(var(--foreground))")
+      .attr("font-size", "11px")
+      .attr("font-family", "monospace")
       .text((d: any) => {
         const balance = d.currentBalance / 1000000;
         return `${balance.toFixed(1)}M STX`;
       });
 
     // Add tooltips
-    const tooltip = d3.select('body')
-      .append('div')
-      .attr('class', 'graph-tooltip')
-      .style('position', 'absolute')
-      .style('visibility', 'hidden')
-      .style('background', 'hsl(var(--popover))')
-      .style('border', '1px solid hsl(var(--border))')
-      .style('padding', '12px')
-      .style('border-radius', '8px')
-      .style('font-size', '12px')
-      .style('pointer-events', 'none')
-      .style('z-index', '1000')
-      .style('box-shadow', 'var(--shadow-card)');
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", "graph-tooltip")
+      .style("position", "absolute")
+      .style("visibility", "hidden")
+      .style("background", "hsl(var(--popover))")
+      .style("border", "1px solid hsl(var(--border))")
+      .style("padding", "12px")
+      .style("border-radius", "8px")
+      .style("font-size", "12px")
+      .style("pointer-events", "none")
+      .style("z-index", "1000")
+      .style("box-shadow", "var(--shadow-card)");
 
-    g.selectAll('.node')
-      .on('mouseover', function(event, d: any) {
-        tooltip.style('visibility', 'visible')
-          .html(`
+    g.selectAll(".node")
+      .on("mouseover", function (event, d: any) {
+        tooltip.style("visibility", "visible").html(`
             <div style="font-family: monospace;">
               <div style="font-weight: bold; margin-bottom: 8px; color: hsl(var(--primary));">
                 ${d.id.substring(0, 8)}...${d.id.substring(d.id.length - 6)}
               </div>
-              <div>Balance: ${(d.currentBalance / 1000000).toFixed(2)}M STX</div>
+              <div>Balance: ${(d.currentBalance / 1000000).toFixed(
+                2
+              )}M STX</div>
               <div>Received: ${(d.received / 1000000).toFixed(2)}M STX</div>
               <div>Sent: ${(d.sent / 1000000).toFixed(2)}M STX</div>
             </div>
           `);
         d3.select(this)
-          .attr('stroke-width', 4)
-          .attr('stroke', 'hsl(var(--accent))');
+          .attr("stroke-width", 4)
+          .attr("stroke", "hsl(var(--accent))");
       })
-      .on('mousemove', function(event) {
+      .on("mousemove", function (event) {
         tooltip
-          .style('top', (event.pageY - 10) + 'px')
-          .style('left', (event.pageX + 10) + 'px');
+          .style("top", event.pageY - 10 + "px")
+          .style("left", event.pageX + 10 + "px");
       })
-      .on('mouseout', function() {
-        tooltip.style('visibility', 'hidden');
+      .on("mouseout", function () {
+        tooltip.style("visibility", "hidden");
         d3.select(this)
-          .attr('stroke-width', 2)
-          .attr('stroke', 'hsl(var(--primary-glow))');
+          .attr("stroke-width", 2)
+          .attr("stroke", "hsl(var(--primary-glow))");
       });
 
     // Position links initially
     link
-      .attr('x1', (d: any) => d.source.fx)
-      .attr('y1', (d: any) => d.source.fy)
-      .attr('x2', (d: any) => d.target.fx)
-      .attr('y2', (d: any) => d.target.fy);
+      .attr("x1", (d: any) => d.source.fx)
+      .attr("y1", (d: any) => d.source.fy)
+      .attr("x2", (d: any) => d.target.fx)
+      .attr("y2", (d: any) => d.target.fy);
 
     // Drag functions
     function dragstarted(event: any, d: any) {
-      d3.select(event.sourceEvent.target).style('cursor', 'grabbing');
+      d3.select(event.sourceEvent.target).style("cursor", "grabbing");
     }
 
     function dragged(event: any, d: any) {
       d.fx = event.x;
       d.fy = event.y;
-      
+
       const balance = Math.abs(d.currentBalance);
       const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
-      
+
       // Update node position
-      g.selectAll('circle.node')
+      g.selectAll("circle.node")
         .filter((circleD: any) => circleD.id === d.id)
-        .attr('cx', d.fx)
-        .attr('cy', d.fy);
-      
-      g.selectAll('rect.node')
+        .attr("cx", d.fx)
+        .attr("cy", d.fy);
+
+      g.selectAll("rect.node")
         .filter((rectD: any) => rectD.id === d.id)
-        .attr('x', d.fx - size)
-        .attr('y', d.fy - size);
-      
+        .attr("x", d.fx - size)
+        .attr("y", d.fy - size);
+
       // Update links
       link
-        .attr('x1', (linkD: any) => linkD.source.fx)
-        .attr('y1', (linkD: any) => linkD.source.fy)
-        .attr('x2', (linkD: any) => linkD.target.fx)
-        .attr('y2', (linkD: any) => linkD.target.fy);
-      
+        .attr("x1", (linkD: any) => linkD.source.fx)
+        .attr("y1", (linkD: any) => linkD.source.fy)
+        .attr("x2", (linkD: any) => linkD.target.fx)
+        .attr("y2", (linkD: any) => linkD.target.fy);
+
       // Update labels
       addressLabels
         .filter((labelD: any) => labelD.id === d.id)
-        .attr('x', d.fx)
-        .attr('y', d.fy);
-      
+        .attr("x", d.fx)
+        .attr("y", d.fy);
+
       balanceLabels
         .filter((labelD: any) => labelD.id === d.id)
-        .attr('x', d.fx)
-        .attr('y', d.fy);
+        .attr("x", d.fx)
+        .attr("y", d.fy);
     }
 
     function dragended(event: any, d: any) {
-      d3.select(event.sourceEvent.target).style('cursor', 'grab');
-      
+      d3.select(event.sourceEvent.target).style("cursor", "grab");
+
       // Save all node positions to localStorage
-      const positions: Record<string, {x: number, y: number}> = {};
+      const positions: Record<string, { x: number; y: number }> = {};
       simulationNodes.forEach((node: any) => {
         positions[node.id] = { x: node.fx, y: node.fy };
       });
-      localStorage.setItem('networkGraphPositions', JSON.stringify(positions));
+      localStorage.setItem("networkGraphPositions", JSON.stringify(positions));
     }
 
     return () => {
       tooltip.remove();
     };
-  }, [nodes, links, timeSeriesData, dimensions]);
+  }, [nodes, links, timeSeriesData, dimensions, currentGroupIndex]);
 
   // Animation effect for moving transaction particles - triggered only on day changes
   useEffect(() => {
-    if (!svgRef.current || dimensions.width === 0 || nodes.length === 0 || dayChangeTrigger === 0) return;
+    if (
+      !svgRef.current ||
+      dimensions.width === 0 ||
+      nodes.length === 0 ||
+      currentGroupIndex === 0
+    )
+      return;
 
     const svg = d3.select(svgRef.current);
-    const g = svg.select('g');
-    
+    const g = svg.select("g");
+
     // Find the current day group based on dayChangeTrigger
     // The dayChangeTrigger increments when the day changes, so we can derive the current day
-    const currentDayIndex = Math.min(dayChangeTrigger - 1, dayGroups.length - 1);
-    
+    const currentDayIndex = Math.min(
+      currentGroupIndex - 1,
+      dayGroups.length - 1
+    );
+
     // Only animate if this day hasn't been animated yet
     if (currentDayIndex === lastAnimatedDayIndex || currentDayIndex < 0) {
       return;
     }
 
-    console.log('Animating day:', {
+    console.log("Animating day:", {
       currentDayIndex,
       lastAnimatedDayIndex,
-      dayChangeTrigger
+      dayChangeTrigger: currentGroupIndex,
     });
 
     // Update the last animated day
     setLastAnimatedDayIndex(currentDayIndex);
-    
+
     // Load positions
-    const savedPositions = localStorage.getItem('networkGraphPositions');
+    const savedPositions = localStorage.getItem("networkGraphPositions");
     const positionsMap = savedPositions ? JSON.parse(savedPositions) : {};
-    
+
     // Get node positions
-    const nodePositions = new Map<string, {x: number, y: number}>();
+    const nodePositions = new Map<string, { x: number; y: number }>();
     nodes.forEach((node, i) => {
       const angleStep = (2 * Math.PI) / nodes.length;
       const radius = Math.min(dimensions.width, dimensions.height) * 0.35;
       const angle = i * angleStep;
       const savedPos = positionsMap[node.id];
       nodePositions.set(node.id, {
-        x: savedPos?.x ?? (dimensions.width / 2 + radius * Math.cos(angle)),
-        y: savedPos?.y ?? (dimensions.height / 2 + radius * Math.sin(angle))
+        x: savedPos?.x ?? dimensions.width / 2 + radius * Math.cos(angle),
+        y: savedPos?.y ?? dimensions.height / 2 + radius * Math.sin(angle),
       });
     });
 
     const currentDayStart = dayGroups[currentDayIndex];
-    const nextDayStart = dayGroups[currentDayIndex + 1] || (currentDayStart + 86400000);
+    const nextDayStart =
+      dayGroups[currentDayIndex + 1] || currentDayStart + DAY_IN_MILLIS;
 
     // Get all transactions from the current day group
     const activeTransactions = transactions.filter(
@@ -362,67 +406,93 @@ export function NetworkGraph({ nodes, links, timeSeriesData, transactions, dayGr
     );
 
     // Remove old particles
-    g.selectAll('.transaction-particle').remove();
+    g.selectAll(".transaction-particle").remove();
 
     // Create particles for active transactions
-    const particleGroup = g.append('g').attr('class', 'transaction-particles');
+    const particleGroup = g.append("g").attr("class", "transaction-particles");
 
     // Particle animation duration (2 seconds)
     const particleAnimationDuration = 2000;
 
     let particlesCreated = 0;
 
-    activeTransactions.forEach(tx => {
+    activeTransactions.forEach((tx) => {
       const sourcePos = nodePositions.get(tx.sender);
       const targetPos = nodePositions.get(tx.recipient);
-      
+
       if (!sourcePos || !targetPos) return;
 
       // Calculate particle size based on amount
-      const MIN_PARTICLE_SIZE = 3;
-      const amountInSTX = tx.amount / 1000000;
-      const particleSize = amountInSTX < 100 
-        ? MIN_PARTICLE_SIZE 
-        : Math.min(20, MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / 100));
+      const particleSize = getParticleSize(tx.amount);
 
       particlesCreated++;
 
       // Create particle at source position
-      const particle = particleGroup.append('circle')
-        .attr('class', 'transaction-particle')
-        .attr('cx', sourcePos.x)
-        .attr('cy', sourcePos.y)
-        .attr('r', particleSize)
-        .attr('fill', 'hsl(var(--accent))')
-        .attr('stroke', 'hsl(var(--accent-glow))')
-        .attr('stroke-width', 1.5)
-        .style('opacity', 0)
-        .style('filter', 'drop-shadow(0 0 4px hsl(var(--accent)))');
+      const particle = particleGroup
+        .append("circle")
+        .attr("class", "transaction-particle")
+        .attr("cx", sourcePos.x)
+        .attr("cy", sourcePos.y)
+        .attr("r", particleSize)
+        .attr("fill", "hsl(var(--accent))")
+        .attr("stroke", "hsl(var(--accent-glow))")
+        .attr("stroke-width", 1.5)
+        .style("opacity", 0)
+        .style("filter", "drop-shadow(0 0 4px hsl(var(--accent)))");
 
       // Animate particle from source to target
       particle
         .transition()
         .duration(100)
-        .style('opacity', 0.8)
+        .style("opacity", 0.8)
         .transition()
         .duration(particleAnimationDuration - 200)
-        .attr('cx', targetPos.x)
-        .attr('cy', targetPos.y)
+        .attr("cx", targetPos.x)
+        .attr("cy", targetPos.y)
         .transition()
         .duration(100)
-        .style('opacity', 0)
+        .style("opacity", 0)
         .remove();
     });
 
-    console.log('Particles created:', particlesCreated, 'for day index:', currentDayIndex);
-
-  }, [nodes, transactions, dimensions, dayGroups, dayChangeTrigger, lastAnimatedDayIndex]);
+    console.log(
+      "Particles created:",
+      particlesCreated,
+      "for day index:",
+      currentDayIndex
+    );
+  }, [
+    nodes,
+    transactions,
+    dimensions,
+    dayGroups,
+    currentGroupIndex,
+    lastAnimatedDayIndex,
+  ]);
 
   return (
     <svg
       ref={svgRef}
       className="w-full h-full"
-      style={{ background: 'hsl(var(--background))' }}
+      style={{ background: "hsl(var(--background))" }}
     />
   );
+}
+function getParticleSize(amountInSTX: number) {
+  const MIN_PARTICLE_SIZE = 3;
+  const MAX_PARTICLE_SIZE = 20;
+  const MIN_AMOUNT = 100;
+  const MAX_AMOUNT = 100000000;
+  const AMOUNT_FACTOR =
+    (MAX_AMOUNT / (MAX_PARTICLE_SIZE - MIN_PARTICLE_SIZE)) ^ 2;
+  const particleSize =
+    amountInSTX < MIN_AMOUNT
+      ? MIN_PARTICLE_SIZE
+      : amountInSTX > MAX_AMOUNT
+      ? MAX_PARTICLE_SIZE
+      : Math.min(
+          MAX_PARTICLE_SIZE,
+          MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / AMOUNT_FACTOR)
+        );
+  return particleSize;
 }
