@@ -11,7 +11,7 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions, currentTimestamp}: TransactionTableProps) {
   // Filter transactions up to current timestamp and get last 20
   const visibleTransactions = transactions
-    .filter((tx) => tx.timestamp <= currentTimestamp + DAY_IN_MILLIS)
+    .filter((tx) => tx.timestamp < currentTimestamp + DAY_IN_MILLIS)
     .slice(-20)
     .reverse();
 
