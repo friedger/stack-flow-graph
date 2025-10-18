@@ -27,7 +27,7 @@ export function NetworkGraph({
 }: NetworkGraphProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [lastAnimatedDayIndex, setLastAnimatedDayIndex] = useState<number>(-1);
+  const prevGroupIndexRef = useRef<number>(currentGroupIndex);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -387,21 +387,19 @@ export function NetworkGraph({
       !svgRef.current ||
       dimensions.width === 0 ||
       nodes.length === 0 ||
-      currentGroupIndex === 0
-    )
+      currentGroupIndex === 0 ||
+      currentGroupIndex === prevGroupIndexRef.current
+    ) {
+      prevGroupIndexRef.current = currentGroupIndex;
       return;
+    }
 
     const svg = d3.select(svgRef.current);
     const g = svg.select("g");
 
-    // Only animate if this day hasn't been animated yet
-    if (currentGroupIndex === lastAnimatedDayIndex || currentGroupIndex < 0) {
-      return;
-    }
-
     console.log("Animating day:", {
       currentDayIndex: currentGroupIndex,
-      lastAnimatedDayIndex,
+      previousDayIndex: prevGroupIndexRef.current,
     });
 
     // Load positions
@@ -476,15 +474,14 @@ export function NetworkGraph({
       activeTransactions.length
     );
     
-    // Update the last animated day
-    setLastAnimatedDayIndex(currentGroupIndex);
+    // Update the ref to track this day
+    prevGroupIndexRef.current = currentGroupIndex;
   }, [
     nodes,
     transactions,
     dimensions,
     dayGroups,
     currentGroupIndex,
-    lastAnimatedDayIndex,
   ]);
 
   return (
