@@ -52,7 +52,10 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
   };
 
   const formatAmount = (amount: number) => {
-    return (amount / 1000000).toFixed(6);
+    return (amount / 1000000).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const getExplorerAddressUrl = (address: string) => {
@@ -98,7 +101,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                       <TableHead>Time</TableHead>
                       <TableHead>From</TableHead>
                       <TableHead>To</TableHead>
-                      <TableHead className="text-right">Amount (M STX)</TableHead>
+                      <TableHead className="text-right">Amount (STX)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
