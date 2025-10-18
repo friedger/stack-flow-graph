@@ -15,7 +15,7 @@ import {
   START_ENDOWMENT,
   DAY_IN_MILLIS,
 } from "@/utils/parseTransactions";
-import { formatAddress, formatAmount } from "@/utils/formatters";
+import { formatAddress, formatAmount, isContractAddress } from "@/utils/formatters";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -165,7 +165,11 @@ const AddressesPage = () => {
                         href={getExplorerAddressUrl(addr.id)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
+                          isContractAddress(addr.id)
+                            ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 border-purple-500/20"
+                            : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
+                        }`}
                       >
                         {formatAddress(addr.id, 10, 8)}
                       </a>
