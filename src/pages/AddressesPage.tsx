@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { loadDataFromFiles } from "@/utils/loadData";
 import { NetworkNode, isSIP031Address, DAILY_REWARD, SEPT_15_START, DAY_IN_MILLIS } from "@/utils/parseTransactions";
+import { formatAddress, formatAmount } from "@/utils/formatters";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -84,17 +85,6 @@ const AddressesPage = () => {
     finalBalance: displayedTotals.finalBalance + lowVolumeFinalBalance
   };
 
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 10)}...${address.substring(address.length - 8)}`;
-  };
-
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-  };
-
   const getExplorerAddressUrl = (address: string) => {
     return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
   };
@@ -151,7 +141,7 @@ const AddressesPage = () => {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                       >
-                        {formatAddress(addr.id)}
+                        {formatAddress(addr.id, 10, 8)}
                       </a>
                     </TableCell>
                     <TableCell className="text-right font-mono text-base py-3">

@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { loadDataFromFiles } from "@/utils/loadData";
 import { Transaction } from "@/utils/parseTransactions";
+import { formatDate, formatAddress, formatAmount } from "@/utils/formatters";
 import { Loader2, ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -25,27 +26,6 @@ const TransactionsPage = () => {
 
     loadData();
   }, []);
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 8)}...${address.substring(address.length - 6)}`;
-  };
-
-  const formatAmount = (amount: number) => {
-    return amount.toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-  };
 
   const getExplorerAddressUrl = (address: string) => {
     return `https://explorer.hiro.so/address/${address}?chain=mainnet`;

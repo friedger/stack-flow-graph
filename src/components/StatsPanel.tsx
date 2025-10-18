@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { NetworkNode, isSIP031Address } from "@/utils/parseTransactions";
+import { formatDate } from "@/utils/formatters";
 import { useMemo } from "react";
 
 interface StatsPanelProps {
@@ -17,16 +18,6 @@ export function StatsPanel({
   dayGroups,
   timeSeriesData,
 }: StatsPanelProps) {
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   // Calculate total STX balance excluding SIP-031 address
   const totalSTXBalance = useMemo(() => {
     // Find the latest balance for each address at or before currentTimestamp

@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DAY_IN_MILLIS, Transaction } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
+import { formatDate, formatDayOnly, formatAddress, formatAmount } from "@/utils/formatters";
 import { ExternalLink } from "lucide-react";
 
 interface TransactionTableProps {
@@ -76,35 +77,6 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
   // Sort by day index (descending - most recent first)
   const sortedDays = Array.from(groupedTransactions.keys()).sort((a, b) => b - a);
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatDayHeader = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const formatAddress = (address: string) => {
-    return `${address.substring(0, 8)}...${address.substring(address.length - 6)}`;
-  };
-
-  const formatAmount = (amount: number) => {
-    return (amount).toLocaleString("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    });
-  };
-
   const getExplorerAddressUrl = (address: string) => {
     return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
   };
@@ -146,7 +118,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                   <>
                     <TableRow key={`day-${dayIndex}`} className="bg-muted hover:bg-muted">
                       <TableCell colSpan={4} className="py-2.5 text-center font-semibold text-foreground">
-                        {formatDate(dayStart)} (+24h)
+                        {formatDayOnly(dayStart)} (+24h)
                       </TableCell>
                     </TableRow>
                     {dayTransactions.map((tx, idx) => (

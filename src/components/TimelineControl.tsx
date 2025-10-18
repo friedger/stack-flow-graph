@@ -5,6 +5,7 @@ import {
   NetworkNode,
   TimeSeries
 } from "@/utils/parseTransactions";
+import { formatDate, formatDayOnly } from "@/utils/formatters";
 import {
   ChevronLeft,
   ChevronRight,
@@ -38,24 +39,6 @@ export function TimelineControl({
   onDayChange,
   currentGroupIndex,
 }: TimelineControlProps) {
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  const formatDayOnly = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   const handleSliderChange = (values: number[]) => {
     onTimeChange(values[0]);
   };
