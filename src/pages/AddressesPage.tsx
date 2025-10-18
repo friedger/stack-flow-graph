@@ -1,21 +1,35 @@
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { loadDataFromFiles } from "@/utils/loadData";
-import { NetworkNode } from "@/utils/parseTransactions";
+import { NetworkNode, isSIP031Address } from "@/utils/parseTransactions";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
+type AddressData = NetworkNode & { initialBalance: number; finalBalance: number };
+
 const AddressesPage = () => {
   const [loading, setLoading] = useState(true);
-  const [nodes, setNodes] = useState<NetworkNode[]>([]);
+  const [addressData, setAddressData] = useState<AddressData[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const { networkData } = await loadDataFromFiles();
-        setNodes(networkData.nodes);
+        
+        // Add initial balance and calculate final balance
+        const enrichedData: AddressData[] = networkData.nodes.map(node => {
+          const initialBalance = isSIP031Address(node.id) ? 200_000_000 : 0;
+          const finalBalance = initialBalance + node.received - node.sent;
+          return {
+            ...node,
+            initialBalance,
+            finalBalance
+          };
+        });
+        
+        setAddressData(enrichedData);
         setLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -25,6 +39,17 @@ const AddressesPage = () => {
 
     loadData();
   }, []);
+
+  // Calculate totals
+  const totals = addressData.reduce(
+    (acc, addr) => ({
+      initialBalance: acc.initialBalance + addr.initialBalance,
+      received: acc.received + addr.received,
+      sent: acc.sent + addr.sent,
+      finalBalance: acc.finalBalance + addr.finalBalance,
+    }),
+    { initialBalance: 0, received: 0, sent: 0, finalBalance: 0 }
+  );
 
   const formatAddress = (address: string) => {
     return `${address.substring(0, 10)}...${address.substring(address.length - 8)}`;
@@ -66,7 +91,7 @@ const AddressesPage = () => {
               All Addresses
             </h1>
             <p className="text-muted-foreground">
-              {nodes.length} addresses with ≥100,000 STX total volume
+              {addressData.length} addresses with ≥100,000 STX total volume
             </p>
           </div>
         </div>
@@ -76,38 +101,63 @@ const AddressesPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-80">Address</TableHead>
-                  <TableHead className="text-right w-40">Received (STX)</TableHead>
-                  <TableHead className="text-right w-40">Sent (STX)</TableHead>
-                  <TableHead className="text-right w-40">Balance (STX)</TableHead>
+                  <TableHead className="w-64">Address</TableHead>
+                  <TableHead className="text-right w-36">Initial (STX)</TableHead>
+                  <TableHead className="text-right w-36">Received (STX)</TableHead>
+                  <TableHead className="text-right w-36">Sent (STX)</TableHead>
+                  <TableHead className="text-right w-36">Final Balance (STX)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {nodes.map((node, idx) => (
+                {addressData.map((addr, idx) => (
                   <TableRow key={idx} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
                     <TableCell className="font-mono text-xs py-3">
                       <a
-                        href={getExplorerAddressUrl(node.id)}
+                        href={getExplorerAddressUrl(addr.id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                       >
-                        {formatAddress(node.id)}
+                        {formatAddress(addr.id)}
                       </a>
                     </TableCell>
                     <TableCell className="text-right font-mono text-base py-3">
-                      {formatAmount(node.received)}
+                      {formatAmount(addr.initialBalance)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-base py-3">
-                      {formatAmount(node.sent)}
+                      {formatAmount(addr.received)}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-base py-3">
+                      {formatAmount(addr.sent)}
                     </TableCell>
                     <TableCell className={`text-right font-mono text-base font-semibold py-3 ${
-                      node.balance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                      addr.finalBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     }`}>
-                      {formatAmount(node.balance)}
+                      {formatAmount(addr.finalBalance)}
                     </TableCell>
                   </TableRow>
                 ))}
+                
+                {/* Totals Row */}
+                <TableRow className="bg-muted/50 font-semibold border-t-2 border-border">
+                  <TableCell className="py-3">
+                    <span className="font-bold">TOTAL</span>
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3">
+                    {formatAmount(totals.initialBalance)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3">
+                    {formatAmount(totals.received)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3">
+                    {formatAmount(totals.sent)}
+                  </TableCell>
+                  <TableCell className={`text-right font-mono text-base font-bold py-3 ${
+                    totals.finalBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    {formatAmount(totals.finalBalance)}
+                  </TableCell>
+                </TableRow>
               </TableBody>
             </Table>
           </div>
