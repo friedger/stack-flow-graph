@@ -53,7 +53,7 @@ export const Footer = () => {
           
           <div className="flex items-center gap-2 sm:gap-3">
             <a
-              href="https://github.com/yourusername/stx-network-visualizer"
+              href="https://github.com/friedger/stack-flow-graph"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 sm:gap-1.5 hover:text-primary transition-colors"
