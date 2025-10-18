@@ -2,12 +2,15 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DAY_IN_MILLIS, Transaction } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
+import { ExternalLink } from "lucide-react";
 
 interface TransactionTableProps {
   transactions: Transaction[];
   currentTimestamp: number;
   dayGroups: number[];
 }
+
+type AggregatedTransaction = Transaction & { txIds: string[] };
 
 export function TransactionTable({ transactions, currentTimestamp, dayGroups }: TransactionTableProps) {
   // Filter transactions up to current timestamp
@@ -25,20 +28,21 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
   });
 
   // Aggregate transactions by sender-receiver pairs within each day
-  const aggregatedByDay = new Map<number, Transaction[]>();
+  const aggregatedByDay = new Map<number, AggregatedTransaction[]>();
   groupedByDay.forEach((dayTxs, dayIndex) => {
-    const pairMap = new Map<string, Transaction>();
+    const pairMap = new Map<string, AggregatedTransaction>();
     
     dayTxs.forEach(tx => {
       const pairKey = `${tx.sender}-${tx.recipient}`;
       
       if (pairMap.has(pairKey)) {
-        // Sum amounts for the same pair
+        // Sum amounts for the same pair and collect txIds
         const existing = pairMap.get(pairKey)!;
         existing.amount += tx.amount;
+        existing.txIds.push(tx.txId);
       } else {
-        // Create a copy to avoid mutating original
-        pairMap.set(pairKey, { ...tx });
+        // Create a copy with txIds array
+        pairMap.set(pairKey, { ...tx, txIds: [tx.txId] });
       }
     });
     
@@ -53,7 +57,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
     .reverse();
 
   // Re-group for display
-  const groupedTransactions = new Map<number, Transaction[]>();
+  const groupedTransactions = new Map<number, AggregatedTransaction[]>();
   allAggregated.forEach(({ dayIndex, tx }) => {
     if (!groupedTransactions.has(dayIndex)) {
       groupedTransactions.set(dayIndex, []);
@@ -133,7 +137,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Time</TableHead>
+                      <TableHead>Transactions</TableHead>
                       <TableHead>From</TableHead>
                       <TableHead>To</TableHead>
                       <TableHead className="text-right">Amount (STX)</TableHead>
@@ -142,15 +146,21 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                   <TableBody>
                     {dayTransactions.map((tx, idx) => (
                       <TableRow key={idx} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
-                        <TableCell className="font-mono text-sm py-3">
-                          <a
-                            href={getExplorerTxUrl(tx.txId)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            {formatDate(tx.timestamp)}
-                          </a>
+                        <TableCell className="py-3">
+                          <div className="flex gap-1.5 flex-wrap">
+                            {tx.txIds.map((txId, i) => (
+                              <a
+                                key={i}
+                                href={getExplorerTxUrl(txId)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center w-7 h-7 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                                title={`Transaction ${i + 1}`}
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ))}
+                          </div>
                         </TableCell>
                         <TableCell className="font-mono text-xs py-3">
                           <a
