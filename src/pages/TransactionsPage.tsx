@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SEO } from "@/components/SEO";
 import { loadDataFromFiles } from "@/utils/loadData";
 import { Transaction } from "@/utils/parseTransactions";
 import { formatDate, formatAmount } from "@/utils/formatters";
@@ -44,7 +45,14 @@ const TransactionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
+    <>
+      <SEO 
+        title={`All Transactions - ${transactions.length} STX Transfers | Stacks Endowment Visualizer`}
+        description={`Browse complete transaction history with ${transactions.length} STX transfers from the SIP-031 endowment program. View detailed records including timestamps, amounts, and blockchain explorer links.`}
+        image="/og-transactions.png"
+        url="https://sip-031.fastpool.org/transactions"
+      />
+      <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         <div className="flex items-center gap-3 md:gap-4">
           <Link to="/">
@@ -107,6 +115,7 @@ const TransactionsPage = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
