@@ -113,15 +113,36 @@ export function NetworkGraph({
     // Create container group
     const g = svg.append("g");
 
+    // Load saved zoom transform from localStorage
+    const savedTransform = localStorage.getItem("networkGraphTransform");
+    let initialTransform = d3.zoomIdentity;
+    
+    if (savedTransform) {
+      const transform = JSON.parse(savedTransform);
+      initialTransform = d3.zoomIdentity
+        .translate(transform.x, transform.y)
+        .scale(transform.k);
+    }
+
     // Add zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.1, 4])
       .on("zoom", (event) => {
         g.attr("transform", event.transform);
+        
+        // Save zoom transform to localStorage
+        localStorage.setItem("networkGraphTransform", JSON.stringify({
+          k: event.transform.k,
+          x: event.transform.x,
+          y: event.transform.y
+        }));
       });
 
     svg.call(zoom as any);
+    
+    // Apply the initial/saved transform
+    svg.call(zoom.transform as any, initialTransform);
 
     // Draw links
     const link = g
