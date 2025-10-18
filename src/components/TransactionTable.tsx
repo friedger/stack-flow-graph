@@ -127,33 +127,30 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
           No transactions yet
         </div>
       ) : (
-        <div className="space-y-4">
-          {sortedDays.map(dayIndex => {
-            const dayTransactions = groupedTransactions.get(dayIndex)!;
-            const dayStart = dayGroups[dayIndex];
-            
-            return (
-              <div key={dayIndex} className="rounded-md border border-border overflow-hidden">
-                <div className="bg-muted px-4 py-2.5 flex items-center justify-between">
-                  <span className="font-semibold text-foreground">
-                    {formatDate(dayStart)} (+24h)
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {dayTransactions.length} {dayTransactions.length === 1 ? 'transaction' : 'transactions'}
-                  </span>
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="text-right w-32">Amount (STX)</TableHead>
-                      <TableHead className="w-40">From</TableHead>
-                      <TableHead className="w-40">To</TableHead>
-                      <TableHead className="w-48">Transactions</TableHead>
+        <div className="rounded-md border border-border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-right w-32">Amount (STX)</TableHead>
+                <TableHead className="w-40">From</TableHead>
+                <TableHead className="w-40">To</TableHead>
+                <TableHead className="w-48">Transactions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedDays.map((dayIndex, dayIdx) => {
+                const dayTransactions = groupedTransactions.get(dayIndex)!;
+                const dayStart = dayGroups[dayIndex];
+                
+                return (
+                  <>
+                    <TableRow key={`day-${dayIndex}`} className="bg-muted hover:bg-muted">
+                      <TableCell colSpan={4} className="py-2.5 text-center font-semibold text-foreground">
+                        {formatDate(dayStart)} (+24h)
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
                     {dayTransactions.map((tx, idx) => (
-                      <TableRow key={idx} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <TableRow key={`${dayIndex}-${idx}`} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
                         <TableCell className="text-right font-mono text-base font-semibold py-3 w-32">
                           {formatAmount(tx.amount)}
                         </TableCell>
@@ -195,11 +192,11 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
-            );
-          })}
+                  </>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
       )}
       
