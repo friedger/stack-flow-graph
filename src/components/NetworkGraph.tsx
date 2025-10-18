@@ -7,7 +7,6 @@ import {
 import { getBalancesForDay, getTransactionsForDay } from "@/utils/timeSeries";
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
-import { groups } from '../utils/parseTransactions.test';
 
 interface NetworkGraphProps {
   nodes: NetworkNode[];
@@ -51,7 +50,7 @@ export function NetworkGraph({
 
     const { width, height } = dimensions;
 
-    const balancesAtTime = getBalancesForDay(groups, currentGroupIndex, timeSeriesData)
+    const balancesAtTime = getBalancesForDay(dayGroups, currentGroupIndex, timeSeriesData)
     console.log(
       "networkgraph",
       currentGroupIndex,
