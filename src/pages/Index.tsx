@@ -3,6 +3,7 @@ import { StatsPanel } from "@/components/StatsPanel";
 import { TimelineControl } from "@/components/TimelineControl";
 import { TransactionTable } from "@/components/TransactionTable";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/components/SEO";
 import { loadDataFromFiles } from "@/utils/loadData";
 import {
   NetworkLink,
@@ -162,7 +163,14 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
+    <>
+      <SEO 
+        title="Stacks Endowment Visualizer - SIP-031 Network Graph | Track 200M+ STX Flow"
+        description="Interactive real-time visualization of the Stacks SIP-031 endowment network. Track 200M+ STX flow across addresses with animated network graphs, transaction history, and balance analytics."
+        image="/og-home.png"
+        url="https://sip-031.fastpool.org/"
+      />
+      <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
         <div className="text-center space-y-3 md:space-y-4">
@@ -240,6 +248,7 @@ const Index = () => {
         />
       </div>
     </div>
+    </>
   );
 };
 

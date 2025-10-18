@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SEO } from "@/components/SEO";
 import { loadDataFromFiles } from "@/utils/loadData";
 import {
   NetworkNode,
@@ -117,7 +118,14 @@ const AddressesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
+    <>
+      <SEO 
+        title={`All Addresses - Track ${addressData.length}+ STX Balances | Stacks Endowment Visualizer`}
+        description={`Monitor STX balances across ${addressData.length}+ addresses in the SIP-031 endowment network. View detailed breakdowns of minted, received, and sent tokens with real-time balance tracking.`}
+        image="/og-addresses.png"
+        url="https://sip-031.fastpool.org/addresses"
+      />
+      <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         <div className="flex items-center gap-3 md:gap-4">
           <Link to="/">
@@ -238,6 +246,7 @@ const AddressesPage = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
