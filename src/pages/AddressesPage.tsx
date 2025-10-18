@@ -17,6 +17,7 @@ import {
 } from "@/utils/parseTransactions";
 import { formatAmount } from "@/utils/formatters";
 import { AddressLink } from "@/components/AddressLink";
+import { getAddressComment } from "@/data/addressComments";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -140,6 +141,7 @@ const AddressesPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[180px] sm:min-w-[220px] md:w-64">Address</TableHead>
+                  <TableHead className="min-w-[120px] sm:min-w-[150px]">Comment</TableHead>
                   <TableHead className="text-right min-w-[100px] sm:min-w-[120px] md:w-36 whitespace-nowrap">
                     Minted
                   </TableHead>
@@ -160,6 +162,9 @@ const AddressesPage = () => {
                   >
                     <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
                       <AddressLink address={addr.id} startChars={10} endChars={8} />
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm py-2 sm:py-3 text-muted-foreground">
+                      {getAddressComment(addr.id) || ""}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base py-2 sm:py-3">
                       {formatAmount(addr.minted)}
@@ -187,6 +192,7 @@ const AddressesPage = () => {
                   <TableCell className="py-3 text-muted-foreground italic">
                     Other Low Volume Addresses
                   </TableCell>
+                  <TableCell className="py-3"></TableCell>
                   <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
                     {formatAmount(lowVolumeMinted)}
                   </TableCell>
@@ -206,6 +212,7 @@ const AddressesPage = () => {
                   <TableCell className="py-3">
                     <span className="font-bold">TOTAL</span>
                   </TableCell>
+                  <TableCell className="py-3"></TableCell>
                   <TableCell className="text-right font-mono text-base py-3">
                     {formatAmount(grandTotals.minted)}
                   </TableCell>
