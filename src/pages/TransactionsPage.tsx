@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { loadDataFromFiles } from "@/utils/loadData";
 import { Transaction } from "@/utils/parseTransactions";
 import { formatDate, formatAddress, formatAmount } from "@/utils/formatters";
+import { Footer } from "@/components/Footer";
 import { Loader2, ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -47,8 +48,9 @@ const TransactionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="flex flex-col min-h-screen">
+      <div className="flex-1 bg-background p-4 md:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Link to="/">
             <Button variant="outline" size="icon">
@@ -122,7 +124,9 @@ const TransactionsPage = () => {
             </Table>
           </div>
         </Card>
+        </div>
       </div>
+      <Footer />
     </div>
   );
 };
