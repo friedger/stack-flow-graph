@@ -50,7 +50,11 @@ export function NetworkGraph({
 
     const { width, height } = dimensions;
 
-    const balancesAtTime = getBalancesForDay(dayGroups, currentGroupIndex, timeSeriesData)
+    // Use previous day's balances for initial node sizes (before animations apply)
+    const previousBalances = currentGroupIndex > 0 
+      ? getBalancesForDay(dayGroups, currentGroupIndex - 1, timeSeriesData)
+      : new Map();
+    
     console.log(
       "networkgraph",
       currentGroupIndex,
@@ -75,7 +79,7 @@ export function NetworkGraph({
 
       return {
         ...node,
-        currentBalance: balancesAtTime.get(node.id) || 0,
+        currentBalance: previousBalances.get(node.id) || 0,
         isContract,
         contractName,
         fx: savedPos?.x ?? width / 2 + radius * Math.cos(angle),
