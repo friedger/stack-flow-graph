@@ -7,6 +7,8 @@ import {
 import { getBalancesForDay, getTransactionsForDay } from "@/utils/timeSeries";
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
 
 interface NetworkGraphProps {
   nodes: NetworkNode[];
@@ -28,6 +30,13 @@ export function NetworkGraph({
   const svgRef = useRef<SVGSVGElement>(null);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const prevGroupIndexRef = useRef<number>(currentGroupIndex);
+  const [resetTrigger, setResetTrigger] = useState(0);
+
+  const handleReset = () => {
+    localStorage.removeItem("networkGraphPositions");
+    localStorage.removeItem("networkGraphTransform");
+    setResetTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -379,7 +388,7 @@ export function NetworkGraph({
     return () => {
       tooltip.remove();
     };
-  }, [nodes, links, timeSeriesData, dimensions, currentGroupIndex]);
+  }, [nodes, links, timeSeriesData, dimensions, currentGroupIndex, resetTrigger]);
 
   // Animation effect for moving transaction particles - triggered only on day changes
   useEffect(() => {
@@ -485,11 +494,22 @@ export function NetworkGraph({
   ]);
 
   return (
-    <svg
-      ref={svgRef}
-      className="w-full h-full"
-      style={{ background: "hsl(var(--background))" }}
-    />
+    <div className="relative w-full h-full">
+      <Button
+        onClick={handleReset}
+        size="sm"
+        variant="outline"
+        className="absolute top-4 right-4 z-10 gap-2"
+      >
+        <RotateCcw className="h-4 w-4" />
+        Reset Layout
+      </Button>
+      <svg
+        ref={svgRef}
+        className="w-full h-full"
+        style={{ background: "hsl(var(--background))" }}
+      />
+    </div>
   );
 }
 
