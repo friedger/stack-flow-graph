@@ -226,6 +226,7 @@ const Index = () => {
         <TransactionTable
           transactions={transactions}
           currentTimestamp={currentTime}
+          dayGroups={dayGroups}
         />
 
         {/* Footer Info */}
