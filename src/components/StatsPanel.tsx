@@ -1,6 +1,6 @@
-import { Card } from '@/components/ui/card';
-import { NetworkNode, isSIP031Address } from '@/utils/parseTransactions';
-import { useMemo } from 'react';
+import { Card } from "@/components/ui/card";
+import { NetworkNode, isSIP031Address } from "@/utils/parseTransactions";
+import { useMemo } from "react";
 
 interface StatsPanelProps {
   nodes: NetworkNode[];
@@ -10,7 +10,23 @@ interface StatsPanelProps {
   timeSeriesData: Map<number, Map<string, number>>;
 }
 
-export function StatsPanel({ nodes, totalTransactions, currentTimestamp, dayGroups, timeSeriesData }: StatsPanelProps) {
+export function StatsPanel({
+  nodes,
+  totalTransactions,
+  currentTimestamp,
+  dayGroups,
+  timeSeriesData,
+}: StatsPanelProps) {
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   // Calculate total STX balance excluding SIP-031 address
   const totalSTXBalance = useMemo(() => {
     // Find the latest balance for each address at or before currentTimestamp
@@ -20,7 +36,8 @@ export function StatsPanel({ nodes, totalTransactions, currentTimestamp, dayGrou
         index = i;
       }
     }
-    const balancesAtTime: Map<string, number> = timeSeriesData.get(dayGroups[index]) || new Map();
+    const balancesAtTime: Map<string, number> =
+      timeSeriesData.get(dayGroups[index]) || new Map();
     let total = 0;
     balancesAtTime.forEach((balance, addr) => {
       if (isSIP031Address(addr)) {
@@ -43,18 +60,27 @@ export function StatsPanel({ nodes, totalTransactions, currentTimestamp, dayGrou
 
       <Card className="p-4 bg-card border-border">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Total STX from SIP-031</p>
-          <p className="text-2xl font-bold text-primary">
-            {totalSTXBalance.toFixed(2)}M
+          <p className="text-xs text-muted-foreground">
+            Total STX from SIP-031
           </p>
-          <p className="text-xs text-accent">STX</p>
+          <p className="text-2xl font-bold text-primary">
+            {totalSTXBalance.toFixed(2)}M STX
+          </p>
+          <p className="text-xs text-accent">
+            until {formatDate(currentTimestamp)}
+          </p>
         </div>
       </Card>
 
       <Card className="p-4 bg-card border-border">
         <div className="space-y-1">
           <p className="text-xs text-muted-foreground">Total Transactions</p>
-          <p className="text-2xl font-bold text-foreground">{totalTransactions}</p>
+          <p className="text-2xl font-bold text-foreground">
+            {totalTransactions}
+          </p>
+          <p className="text-xs text-accent">
+            {formatDate(dayGroups[0])} - {formatDate(dayGroups[dayGroups.length -1])}
+          </p>
         </div>
       </Card>
     </div>
