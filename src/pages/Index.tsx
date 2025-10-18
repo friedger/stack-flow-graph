@@ -2,7 +2,6 @@ import { NetworkGraph } from "@/components/NetworkGraph";
 import { StatsPanel } from "@/components/StatsPanel";
 import { TimelineControl } from "@/components/TimelineControl";
 import { TransactionTable } from "@/components/TransactionTable";
-import { Footer } from "@/components/Footer";
 import { loadDataFromFiles } from "@/utils/loadData";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   Transaction
 } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
+import { formatDayOnly } from "@/utils/formatters";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -164,19 +164,98 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex-1 bg-background p-4 md:p-8">
-        <div className="max-w-7xl mx-auto space-y-6">
-...
+    <div className="min-h-screen bg-background p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            Stacks Endowment (SIP-031)
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Interactive visualization of STX transactions over time
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to="/addresses">
+              <Button variant="outline">
+                View All Addresses
+              </Button>
+            </Link>
+            <Link to="/transactions">
+              <Button variant="outline">
+                View All Transactions
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Stats Panel */}
+        <StatsPanel
+          nodes={nodes}
+          totalTransactions={transactions.length}
+          currentTimestamp={currentTime}
+          dayGroups={dayGroups}
+          timeSeriesData={timeSeriesData}
+        />
+
+        {/* Network Graph */}
+        <div
+          className="bg-card border border-border rounded-xl overflow-hidden shadow-lg"
+          style={{ height: "600px" }}
+        >
+          <NetworkGraph
+            nodes={nodes}
+            links={links}
+            timeSeriesData={timeSeriesData}
+            transactions={transactions}
+            dayGroups={dayGroups}
+            currentGroupIndex={dayChangeTrigger}
+          />
+        </div>
+
+        {/* Timeline Control */}
+        <TimelineControl
+          minTime={minTime}
+          maxTime={maxTime}
+          currentTime={currentTime}
+          onTimeChange={setCurrentTime}
+          isPlaying={isPlaying}
+          onPlayPause={handlePlayPause}
+          onReset={handleReset}
+          dayGroups={dayGroups}
+          currentGroupIndex={dayChangeTrigger}
+          onDayChange={(step: number) => {
+            // Stop autoplay when manually navigating
+            setIsPlaying(false);
+            
+            // Use getDayIndexAtTime to correctly find current day even during autoplay
+            const currentIdx = getDayIndexAtTime(dayGroups, currentTime);
+            let newIdx = currentIdx + step;
+            
+            // Clamp to valid range
+            newIdx = Math.max(0, Math.min(dayGroups.length - 1, newIdx));
+            setCurrentTime(dayGroups[newIdx]);
+          }}
+        />
+
+        {/* Transaction Table */}
+        <TransactionTable
+          transactions={transactions}
+          currentTimestamp={currentTime}
+          dayGroups={dayGroups}
+        />
+
+        {/* Footer Info */}
+        <div className="text-center text-sm text-muted-foreground space-y-1">
+          <p>Displaying addresses with ≥100,000 STX total volume</p>
+          <p className="font-mono text-xs">
+            {nodes.length} active addresses • {links.length} connections •{" "}
+            {transactions.length} transactions
+          </p>
+          <p className="font-mono text-xs">
+            from {formatDayOnly(minTime)} until {formatDayOnly(maxTime)}{" "}
+          </p>
         </div>
       </div>
-      <Footer
-        nodes={nodes.length}
-        links={links.length}
-        transactions={transactions.length}
-        minTime={minTime}
-        maxTime={maxTime}
-      />
     </div>
   );
 };

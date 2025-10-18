@@ -1,33 +1,9 @@
 import { Github } from "lucide-react";
-import { formatDayOnly } from "@/utils/formatters";
 
-interface FooterProps {
-  nodes?: number;
-  links?: number;
-  transactions?: number;
-  minTime?: number;
-  maxTime?: number;
-}
-
-export const Footer = ({ nodes, links, transactions, minTime, maxTime }: FooterProps) => {
+export const Footer = () => {
   return (
     <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto">
       <div className="container mx-auto px-4 py-6">
-        {/* Footer Info Stats */}
-        {nodes !== undefined && links !== undefined && transactions !== undefined && (
-          <div className="text-center text-sm text-muted-foreground space-y-1 mb-6">
-            <p>Displaying addresses with ≥100,000 STX total volume</p>
-            <p className="font-mono text-xs">
-              {nodes} active addresses • {links} connections • {transactions} transactions
-            </p>
-            {minTime !== undefined && maxTime !== undefined && (
-              <p className="font-mono text-xs">
-                from {formatDayOnly(minTime)} until {formatDayOnly(maxTime)}
-              </p>
-            )}
-          </div>
-        )}
-
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="STX Network Logo" className="h-8 w-8" />
