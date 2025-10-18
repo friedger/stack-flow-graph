@@ -2,7 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DAY_IN_MILLIS, Transaction } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
-import { formatDate, formatDayOnly, formatAddress, formatAmount, isContractAddress } from "@/utils/formatters";
+import { formatDate, formatDayOnly, formatAmount } from "@/utils/formatters";
+import { AddressLink } from "@/components/AddressLink";
 import { ExternalLink } from "lucide-react";
 
 interface TransactionTableProps {
@@ -77,10 +78,6 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
   // Sort by day index (descending - most recent first)
   const sortedDays = Array.from(groupedTransactions.keys()).sort((a, b) => b - a);
 
-  const getExplorerAddressUrl = (address: string) => {
-    return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
-  };
-
   const getExplorerTxUrl = (txId: string) => {
     return `https://explorer.hiro.so/txid/${txId}?chain=mainnet`;
   };
@@ -128,32 +125,10 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                           {formatAmount(tx.amount)}
                         </TableCell>
                         <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
-                          <a
-                            href={getExplorerAddressUrl(tx.sender)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
-                              isContractAddress(tx.sender)
-                                ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
-                                : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                            }`}
-                          >
-                            {formatAddress(tx.sender)}
-                          </a>
+                          <AddressLink address={tx.sender} variant="primary" />
                         </TableCell>
                         <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
-                          <a
-                            href={getExplorerAddressUrl(tx.recipient)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
-                              isContractAddress(tx.recipient)
-                                ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
-                                : "bg-accent/10 text-accent hover:bg-accent/20 border-accent/20"
-                            }`}
-                          >
-                            {formatAddress(tx.recipient)}
-                          </a>
+                          <AddressLink address={tx.recipient} variant="accent" />
                         </TableCell>
                         <TableCell className="py-2 sm:py-3">
                           <div className="flex gap-1 sm:gap-1.5 flex-wrap">

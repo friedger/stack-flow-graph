@@ -15,7 +15,8 @@ import {
   START_ENDOWMENT,
   DAY_IN_MILLIS,
 } from "@/utils/parseTransactions";
-import { formatAddress, formatAmount, isContractAddress } from "@/utils/formatters";
+import { formatAmount } from "@/utils/formatters";
+import { AddressLink } from "@/components/AddressLink";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -102,9 +103,6 @@ const AddressesPage = () => {
     finalBalance: displayedTotals.finalBalance + lowVolumeFinalBalance,
   };
 
-  const getExplorerAddressUrl = (address: string) => {
-    return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
-  };
 
   if (loading) {
     return (
@@ -161,18 +159,7 @@ const AddressesPage = () => {
                     className="even:bg-muted/30 hover:bg-muted/50 transition-colors"
                   >
                     <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
-                      <a
-                        href={getExplorerAddressUrl(addr.id)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
-                          isContractAddress(addr.id)
-                            ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
-                            : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                        }`}
-                      >
-                        {formatAddress(addr.id, 10, 8)}
-                      </a>
+                      <AddressLink address={addr.id} startChars={10} endChars={8} />
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base py-2 sm:py-3">
                       {formatAmount(addr.minted)}

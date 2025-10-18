@@ -2,7 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { loadDataFromFiles } from "@/utils/loadData";
 import { Transaction } from "@/utils/parseTransactions";
-import { formatDate, formatAddress, formatAmount, isContractAddress } from "@/utils/formatters";
+import { formatDate, formatAmount } from "@/utils/formatters";
+import { AddressLink } from "@/components/AddressLink";
 import { Loader2, ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -26,10 +27,6 @@ const TransactionsPage = () => {
 
     loadData();
   }, []);
-
-  const getExplorerAddressUrl = (address: string) => {
-    return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
-  };
 
   const getExplorerTxUrl = (txId: string) => {
     return `https://explorer.hiro.so/txid/${txId}?chain=mainnet`;
@@ -84,32 +81,10 @@ const TransactionsPage = () => {
                       {formatDate(tx.timestamp)}
                     </TableCell>
                     <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
-                      <a
-                        href={getExplorerAddressUrl(tx.sender)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
-                          isContractAddress(tx.sender)
-                            ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
-                            : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
-                        }`}
-                      >
-                        {formatAddress(tx.sender)}
-                      </a>
+                      <AddressLink address={tx.sender} variant="primary" />
                     </TableCell>
                     <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
-                      <a
-                        href={getExplorerAddressUrl(tx.recipient)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
-                          isContractAddress(tx.recipient)
-                            ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
-                            : "bg-accent/10 text-accent hover:bg-accent/20 border-accent/20"
-                        }`}
-                      >
-                        {formatAddress(tx.recipient)}
-                      </a>
+                      <AddressLink address={tx.recipient} variant="accent" />
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base font-semibold py-2 sm:py-3">
                       {formatAmount(tx.amount)}
