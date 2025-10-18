@@ -1,5 +1,6 @@
 import { describe } from "vitest";
 import { loadDataFromFiles } from "./loadData";
+import { getTransactionsForDay } from "./timeSeries";
 
 describe("Verify time series with all data", () => {
   it("should create correct tx groups", async () => {
@@ -21,7 +22,9 @@ describe("Verify time series with all data", () => {
       1758117395000, 1758203795000, 1758668090000, 1758920239000, 1759192355000,
       1759279144000, 1759395366000, 1759760018000, 1760129546000,
     ]);
-    expect(Object.fromEntries(timeSeries.get(groups[0]).entries())).toStrictEqual({
+    expect(
+      Object.fromEntries(timeSeries.get(groups[0]).entries())
+    ).toStrictEqual({
       "SP000000000000000000002Q6VF78.sip-031": 200136800,
       SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 0,
       SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 0,
@@ -31,8 +34,9 @@ describe("Verify time series with all data", () => {
       "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core": 0,
     });
 
-
-     expect(Object.fromEntries(timeSeries.get(groups[2]).entries())).toStrictEqual({
+    expect(
+      Object.fromEntries(timeSeries.get(groups[2]).entries())
+    ).toStrictEqual({
       "SP000000000000000000002Q6VF78.sip-031": 93554283.333,
       SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 101334916.667,
       SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 500000.9249999998,
@@ -42,7 +46,9 @@ describe("Verify time series with all data", () => {
       "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core": 0,
     });
 
-     expect(Object.fromEntries(timeSeries.get(groups[groups.length - 1]).entries())).toStrictEqual({
+    expect(
+      Object.fromEntries(timeSeries.get(groups[groups.length - 1]).entries())
+    ).toStrictEqual({
       "SP000000000000000000002Q6VF78.sip-031": 100736283.333,
       SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 78334916.667,
       SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 1700000.9250000007,
@@ -61,5 +67,27 @@ describe("Verify time series with all data", () => {
       "SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES",
       "SP3YBY0BH4ANC0Q35QB6PD163F943FVFVDFM1SH7S.gl-core",
     ]);
+  });
+
+  it("should get the correct txs for each day", async () => {
+    const {
+      groups,
+      timeSeries,
+      networkData: { nodes },
+      orderedTransactions,
+    } = await loadDataFromFiles();
+    const expectedTxs = [
+      [],
+      [1758203795000, 1758229350000, 1758229350000, 1758251640000, 1758251640000,
+        1758251640000, 1758251640000, 1758251640000,],
+      [
+         1758668090000,
+      ],
+    ];
+    expectedTxs.forEach((expected, index) => {
+      const txs = getTransactionsForDay(groups, index, orderedTransactions);
+      console.log(index);
+      expect(txs.map((t) => t.timestamp)).toStrictEqual(expected);
+    });
   });
 });

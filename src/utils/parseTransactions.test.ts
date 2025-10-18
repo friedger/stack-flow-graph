@@ -2,13 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   calculateGroupBalances,
   calculateNetworkData,
-  DAILY_REWARD,
+  DAY_IN_MILLIS,
   TimeSeries,
-  Transaction,
+  Transaction
 } from "./parseTransactions";
 
-const DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
-const PARSED_TRANSACTIONS: Transaction[] = [
+export const PARSED_TRANSACTIONS: Transaction[] = [
   {
     sender: "A",
     recipient: "B",
@@ -23,7 +22,7 @@ const PARSED_TRANSACTIONS: Transaction[] = [
     sender: "B",
     recipient: "SP000.sip-031",
     amount: 50_000_000,
-    timestamp: 1757894400001,
+    timestamp: 1757894400002,
     date: new Date(),
     type: "send",
     ownerAddress: "B",
@@ -63,13 +62,13 @@ const networkData = calculateNetworkData(PARSED_TRANSACTIONS);
 //     sent: 0
 // }]);
 
-const timeSeriesData: TimeSeries = calculateGroupBalances(
+export const timeSeriesData: TimeSeries = calculateGroupBalances(
   PARSED_TRANSACTIONS,
   new Set(networkData.nodes.map((n) => n.id)),
   initialBalances
 );
 
-const groups = Array.from(timeSeriesData.keys());
+export const groups = Array.from(timeSeriesData.keys());
 
 describe("parseTransactions", () => {
   it("should generate correct timeseries data", async () => {

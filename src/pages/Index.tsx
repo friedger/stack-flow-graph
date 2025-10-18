@@ -38,12 +38,11 @@ const Index = () => {
         setTimeSeriesData(timeSeries);
 
         if (orderedTransactions.length > 0) {
-          // Start timeline on September 15th, 2025
-          const minTimestamp = dayGroups[0];
-          const maxTimestamp = dayGroups[dayGroups.length - 1];
+          const minTimestamp = groups[0];
+          const maxTimestamp = groups[groups.length - 1];
           setMinTime(minTimestamp);
           setMaxTime(maxTimestamp);
-          setCurrentTime(maxTimestamp);
+          setCurrentTime(minTimestamp);
 
           setDayGroups(Array.from(groups.values()).sort((a, b) => a - b));
         }

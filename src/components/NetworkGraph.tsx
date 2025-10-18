@@ -1,12 +1,13 @@
 import {
-  DAY_IN_MILLIS,
   NetworkLink,
   NetworkNode,
   TimeSeries,
   Transaction
 } from "@/utils/parseTransactions";
+import { getBalancesForDay, getTransactionsForDay } from "@/utils/timeSeries";
 import * as d3 from "d3";
 import { useEffect, useRef, useState } from "react";
+import { groups } from '../utils/parseTransactions.test';
 
 interface NetworkGraphProps {
   nodes: NetworkNode[];
@@ -50,8 +51,12 @@ export function NetworkGraph({
 
     const { width, height } = dimensions;
 
-    const balancesAtTime = timeSeriesData.get(dayGroups[currentGroupIndex]);
-    console.log("networkgraph", currentGroupIndex, dayGroups[currentGroupIndex]);
+    const balancesAtTime = getBalancesForDay(groups, currentGroupIndex, timeSeriesData)
+    console.log(
+      "networkgraph",
+      currentGroupIndex,
+      dayGroups[currentGroupIndex] + 1
+    );
 
     // Load saved positions from localStorage
     const savedPositions = localStorage.getItem("networkGraphPositions");
@@ -358,26 +363,15 @@ export function NetworkGraph({
     const svg = d3.select(svgRef.current);
     const g = svg.select("g");
 
-    // Find the current day group based on dayChangeTrigger
-    // The dayChangeTrigger increments when the day changes, so we can derive the current day
-    const currentDayIndex = Math.min(
-      currentGroupIndex - 1,
-      dayGroups.length - 1
-    );
-
     // Only animate if this day hasn't been animated yet
-    if (currentDayIndex === lastAnimatedDayIndex || currentDayIndex < 0) {
+    if (currentGroupIndex === lastAnimatedDayIndex || currentGroupIndex < 0) {
       return;
     }
 
     console.log("Animating day:", {
-      currentDayIndex,
+      currentDayIndex: currentGroupIndex,
       lastAnimatedDayIndex,
-      dayChangeTrigger: currentGroupIndex,
     });
-
-    // Update the last animated day
-    setLastAnimatedDayIndex(currentDayIndex);
 
     // Load positions
     const savedPositions = localStorage.getItem("networkGraphPositions");
@@ -396,13 +390,10 @@ export function NetworkGraph({
       });
     });
 
-    const currentDayStart = dayGroups[currentDayIndex];
-    const nextDayStart =
-      dayGroups[currentDayIndex + 1] || currentDayStart + DAY_IN_MILLIS;
-
-    // Get all transactions from the current day group
-    const activeTransactions = transactions.filter(
-      (tx) => tx.timestamp >= currentDayStart && tx.timestamp < nextDayStart
+    const activeTransactions = getTransactionsForDay(
+      dayGroups,
+      currentGroupIndex,
+      transactions
     );
 
     // Remove old particles
@@ -459,8 +450,11 @@ export function NetworkGraph({
       "Particles created:",
       particlesCreated,
       "for day index:",
-      currentDayIndex
+      currentGroupIndex
     );
+    
+    // Update the last animated day
+    setLastAnimatedDayIndex(currentGroupIndex);
   }, [
     nodes,
     transactions,
@@ -478,6 +472,7 @@ export function NetworkGraph({
     />
   );
 }
+
 function getParticleSize(amountInSTX: number) {
   const MIN_PARTICLE_SIZE = 3;
   const MAX_PARTICLE_SIZE = 20;
