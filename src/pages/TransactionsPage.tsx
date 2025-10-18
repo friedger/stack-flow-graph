@@ -47,73 +47,73 @@ const TransactionsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+        <div className="flex items-center gap-3 md:gap-4">
           <Link to="/">
             <Button variant="outline" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
               All Transactions
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {transactions.length} transactions in total
             </p>
           </div>
         </div>
 
-        <Card className="p-6 bg-card border-border">
-          <div className="rounded-md border border-border overflow-hidden">
+        <Card className="p-3 sm:p-4 md:p-6 bg-card border-border">
+          <div className="rounded-md border border-border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-48">Timestamp</TableHead>
-                  <TableHead className="w-40">From</TableHead>
-                  <TableHead className="w-40">To</TableHead>
-                  <TableHead className="text-right w-32">Amount (STX)</TableHead>
-                  <TableHead className="w-20">Link</TableHead>
+                  <TableHead className="min-w-[140px] sm:min-w-[160px] md:w-48 whitespace-nowrap">Timestamp</TableHead>
+                  <TableHead className="min-w-[120px] sm:min-w-[140px] md:w-40">From</TableHead>
+                  <TableHead className="min-w-[120px] sm:min-w-[140px] md:w-40">To</TableHead>
+                  <TableHead className="text-right min-w-[100px] sm:min-w-[120px] md:w-32 whitespace-nowrap">Amount</TableHead>
+                  <TableHead className="min-w-[60px] md:w-20">Link</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {transactions.map((tx, idx) => (
                   <TableRow key={idx} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-mono text-sm py-3">
+                    <TableCell className="font-mono text-[10px] sm:text-xs md:text-sm py-2 sm:py-3">
                       {formatDate(tx.timestamp)}
                     </TableCell>
-                    <TableCell className="font-mono text-xs py-3">
+                    <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
                       <a
                         href={getExplorerAddressUrl(tx.sender)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                        className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                       >
                         {formatAddress(tx.sender)}
                       </a>
                     </TableCell>
-                    <TableCell className="font-mono text-xs py-3">
+                    <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
                       <a
                         href={getExplorerAddressUrl(tx.recipient)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 text-accent hover:bg-accent/20 transition-colors border border-accent/20"
+                        className="inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md bg-accent/10 text-accent hover:bg-accent/20 transition-colors border border-accent/20"
                       >
                         {formatAddress(tx.recipient)}
                       </a>
                     </TableCell>
-                    <TableCell className="text-right font-mono text-base font-semibold py-3">
+                    <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base font-semibold py-2 sm:py-3">
                       {formatAmount(tx.amount)}
                     </TableCell>
-                    <TableCell className="py-3">
+                    <TableCell className="py-2 sm:py-3">
                       <a
                         href={getExplorerTxUrl(tx.txId)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center w-8 h-8 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                        className="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                       >
-                        <ExternalLink className="w-4 h-4" />
+                        <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
                       </a>
                     </TableCell>
                   </TableRow>

@@ -32,33 +32,33 @@ export const Footer = () => {
 
   return (
     <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-auto">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="STX Network Logo" className="h-6 w-6" />
-            <span>Stacks Endowment (SIP-031)</span>
+      <div className="container mx-auto px-3 sm:px-4 py-2.5 sm:py-3">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-2 sm:gap-3 text-[10px] sm:text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img src="/logo.png" alt="STX Network Logo" className="h-5 w-5 sm:h-6 sm:w-6" />
+            <span className="text-center sm:text-left">Stacks Endowment (SIP-031)</span>
           </div>
           
           {stats && (
-            <div className="flex items-center gap-3 font-mono">
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 font-mono text-center">
               <span>{stats.nodes} addresses</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span>{stats.links} connections</span>
-              <span>•</span>
-              <span>{stats.transactions} transactions</span>
-              <span>•</span>
-              <span>{formatDayOnly(stats.minTime)} - {formatDayOnly(stats.maxTime)}</span>
+              <span className="hidden sm:inline">•</span>
+              <span>{stats.transactions} txs</span>
+              <span className="hidden md:inline">•</span>
+              <span className="hidden md:inline">{formatDayOnly(stats.minTime)} - {formatDayOnly(stats.maxTime)}</span>
             </div>
           )}
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <a
               href="https://github.com/yourusername/stx-network-visualizer"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 hover:text-primary transition-colors"
+              className="inline-flex items-center gap-1 sm:gap-1.5 hover:text-primary transition-colors"
             >
-              <Github className="h-3.5 w-3.5" />
+              <Github className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               <span>GitHub</span>
             </a>
             <span>© {new Date().getFullYear()}</span>
