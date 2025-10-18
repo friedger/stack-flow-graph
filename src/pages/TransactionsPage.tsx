@@ -90,7 +90,7 @@ const TransactionsPage = () => {
                         rel="noopener noreferrer"
                         className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
                           isContractAddress(tx.sender)
-                            ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 border-purple-500/20"
+                            ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
                             : "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20"
                         }`}
                       >
@@ -104,7 +104,7 @@ const TransactionsPage = () => {
                         rel="noopener noreferrer"
                         className={`inline-flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md transition-colors border ${
                           isContractAddress(tx.recipient)
-                            ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 border-purple-500/20"
+                            ? "bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/30 border-purple-500/30 dark:border-purple-400/40"
                             : "bg-accent/10 text-accent hover:bg-accent/20 border-accent/20"
                         }`}
                       >
