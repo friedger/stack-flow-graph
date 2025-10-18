@@ -3,6 +3,8 @@ import { StatsPanel } from "@/components/StatsPanel";
 import { TimelineControl } from "@/components/TimelineControl";
 import { TransactionTable } from "@/components/TransactionTable";
 import { loadDataFromFiles } from "@/utils/loadData";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   NetworkLink,
   NetworkNode,
@@ -164,13 +166,25 @@ const Index = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-4">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             Stacks Endowment (SIP-031)
           </h1>
           <p className="text-muted-foreground text-lg">
             Interactive visualization of STX transactions over time
           </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link to="/addresses">
+              <Button variant="outline">
+                View All Addresses
+              </Button>
+            </Link>
+            <Link to="/transactions">
+              <Button variant="outline">
+                View All Transactions
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Stats Panel */}
