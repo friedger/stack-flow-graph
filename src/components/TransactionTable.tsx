@@ -10,7 +10,10 @@ interface TransactionTableProps {
   dayGroups: number[];
 }
 
-type AggregatedTransaction = Transaction & { txIds: string[] };
+type AggregatedTransaction = Transaction & { 
+  txIds: string[];
+  txDetails: Array<{ txId: string; amount: number; timestamp: number }>;
+};
 
 export function TransactionTable({ transactions, currentTimestamp, dayGroups }: TransactionTableProps) {
   // Filter transactions up to current timestamp
@@ -36,13 +39,18 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
       const pairKey = `${tx.sender}-${tx.recipient}`;
       
       if (pairMap.has(pairKey)) {
-        // Sum amounts for the same pair and collect txIds
+        // Sum amounts for the same pair and collect transaction details
         const existing = pairMap.get(pairKey)!;
         existing.amount += tx.amount;
         existing.txIds.push(tx.txId);
+        existing.txDetails.push({ txId: tx.txId, amount: tx.amount, timestamp: tx.timestamp });
       } else {
-        // Create a copy with txIds array
-        pairMap.set(pairKey, { ...tx, txIds: [tx.txId] });
+        // Create a copy with transaction details
+        pairMap.set(pairKey, { 
+          ...tx, 
+          txIds: [tx.txId],
+          txDetails: [{ txId: tx.txId, amount: tx.amount, timestamp: tx.timestamp }]
+        });
       }
     });
     
@@ -137,32 +145,19 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Transactions</TableHead>
-                      <TableHead>From</TableHead>
-                      <TableHead>To</TableHead>
-                      <TableHead className="text-right">Amount (STX)</TableHead>
+                      <TableHead className="text-right w-32">Amount (STX)</TableHead>
+                      <TableHead className="w-40">From</TableHead>
+                      <TableHead className="w-40">To</TableHead>
+                      <TableHead className="w-48">Transactions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {dayTransactions.map((tx, idx) => (
                       <TableRow key={idx} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
-                        <TableCell className="py-3">
-                          <div className="flex gap-1.5 flex-wrap">
-                            {tx.txIds.map((txId, i) => (
-                              <a
-                                key={i}
-                                href={getExplorerTxUrl(txId)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center w-7 h-7 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
-                                title={`Transaction ${i + 1}`}
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </a>
-                            ))}
-                          </div>
+                        <TableCell className="text-right font-mono text-base font-semibold py-3 w-32">
+                          {formatAmount(tx.amount)}
                         </TableCell>
-                        <TableCell className="font-mono text-xs py-3">
+                        <TableCell className="font-mono text-xs py-3 w-40">
                           <a
                             href={getExplorerAddressUrl(tx.sender)}
                             target="_blank"
@@ -172,7 +167,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                             {formatAddress(tx.sender)}
                           </a>
                         </TableCell>
-                        <TableCell className="font-mono text-xs py-3">
+                        <TableCell className="font-mono text-xs py-3 w-40">
                           <a
                             href={getExplorerAddressUrl(tx.recipient)}
                             target="_blank"
@@ -182,8 +177,21 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                             {formatAddress(tx.recipient)}
                           </a>
                         </TableCell>
-                        <TableCell className="text-right font-mono text-base font-semibold py-3">
-                          {formatAmount(tx.amount)}
+                        <TableCell className="py-3 w-48">
+                          <div className="flex gap-1.5 flex-wrap">
+                            {tx.txDetails.map((detail, i) => (
+                              <a
+                                key={i}
+                                href={getExplorerTxUrl(detail.txId)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center w-7 h-7 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                                title={`${formatAmount(detail.amount)} STX\n${formatDate(detail.timestamp)}`}
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </a>
+                            ))}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
