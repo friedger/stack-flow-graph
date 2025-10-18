@@ -413,16 +413,20 @@ export function NetworkGraph({
       // Case 1: Both nodes are in the network
       if (sourcePos && targetPos) {
         createParticleAnimation(particleGroup, sourcePos, targetPos, tx.amount, particleAnimationDuration);
+        animateNodeSize(g, tx.sender, -tx.amount, particleAnimationDuration, true); // Sender shrinks
+        animateNodeSize(g, tx.recipient, tx.amount, particleAnimationDuration, false); // Receiver grows
         particlesCreated++;
       }
       // Case 2: Outgoing transaction (node → external)
       else if (sourcePos && !targetPos) {
         createOutgoingParticleAnimation(particleGroup, sourcePos, dimensions, tx.amount, particleAnimationDuration);
+        animateNodeSize(g, tx.sender, -tx.amount, particleAnimationDuration, true); // Sender shrinks
         particlesCreated++;
       }
       // Case 3: Incoming transaction (external → node)
       else if (!sourcePos && targetPos) {
         createIncomingParticleAnimation(particleGroup, targetPos, dimensions, tx.amount, particleAnimationDuration);
+        animateNodeSize(g, tx.recipient, tx.amount, particleAnimationDuration, false); // Receiver grows
         particlesCreated++;
       }
       // Case 4: Both external (skip)
@@ -607,4 +611,73 @@ function createIncomingParticleAnimation(
     .duration(100)
     .style("opacity", 0)
     .remove();
+}
+
+// Animate node size change during transactions
+function animateNodeSize(
+  g: any,
+  nodeId: string,
+  amountChange: number,
+  duration: number,
+  isSending: boolean
+) {
+  // Get the node's current balance from its data
+  const nodeElement = g.selectAll(".node").filter((d: any) => d.id === nodeId);
+  if (nodeElement.empty()) return;
+
+  const nodeData: any = nodeElement.datum();
+  const currentBalance = Math.abs(nodeData.currentBalance);
+  const newBalance = Math.abs(nodeData.currentBalance + amountChange);
+  
+  const currentSize = Math.max(20, Math.min(80, Math.sqrt(currentBalance) / 100));
+  const newSize = Math.max(20, Math.min(80, Math.sqrt(newBalance) / 100));
+
+  // Determine timing: sending shrinks in first 50%, receiving grows in last 50%
+  const delay = isSending ? 0 : duration / 2;
+  const animDuration = duration / 2;
+
+  // Animate circles
+  g.selectAll("circle.node")
+    .filter((d: any) => d.id === nodeId)
+    .transition()
+    .delay(delay)
+    .duration(animDuration)
+    .attr("r", newSize);
+
+  // Animate rectangles (contracts)
+  g.selectAll("rect.node")
+    .filter((d: any) => d.id === nodeId)
+    .transition()
+    .delay(delay)
+    .duration(animDuration)
+    .attr("width", newSize * 2)
+    .attr("height", newSize * 2)
+    .attr("x", (d: any) => d.fx - newSize)
+    .attr("y", (d: any) => d.fy - newSize);
+
+  // Animate address labels
+  g.selectAll("text.address-label")
+    .filter((d: any) => d.id === nodeId)
+    .transition()
+    .delay(delay)
+    .duration(animDuration)
+    .attr("dy", (d: any) => (d.isContract ? -newSize - 20 : -newSize - 5));
+
+  // Animate balance labels
+  g.selectAll("text.balance-label")
+    .filter((d: any) => d.id === nodeId)
+    .transition()
+    .delay(delay)
+    .duration(animDuration)
+    .attr("dy", newSize + 15)
+    .tween("text", function(d: any) {
+      const i = d3.interpolate(currentBalance, newBalance);
+      return function(t: number) {
+        const balance = i(t) / 1000000;
+        d3.select(this).text(`${balance.toFixed(1)}M STX`);
+      };
+    });
+
+  // Update the node data
+  nodeData.currentBalance = nodeData.currentBalance + amountChange;
 }
