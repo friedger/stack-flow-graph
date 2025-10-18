@@ -51,9 +51,10 @@ export function NetworkGraph({
     const { width, height } = dimensions;
 
     // Use previous day's balances for initial node sizes (before animations apply)
+    // For day 0, use current day's balances (no animation)
     const previousBalances = currentGroupIndex > 0 
       ? getBalancesForDay(dayGroups, currentGroupIndex - 1, timeSeriesData)
-      : new Map();
+      : getBalancesForDay(dayGroups, currentGroupIndex, timeSeriesData);
     
     // Use current day's balances for node colors
     const currentBalances = getBalancesForDay(dayGroups, currentGroupIndex, timeSeriesData);
