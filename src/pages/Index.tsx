@@ -209,8 +209,13 @@ const Index = () => {
           dayGroups={dayGroups}
           currentGroupIndex={dayChangeTrigger}
           onDayChange={(step: number) => {
-            const currentIdx = dayGroups.findIndex(ts => ts === currentTime);
+            // Stop autoplay when manually navigating
+            setIsPlaying(false);
+            
+            // Use getDayIndexAtTime to correctly find current day even during autoplay
+            const currentIdx = getDayIndexAtTime(dayGroups, currentTime);
             let newIdx = currentIdx + step;
+            
             // Clamp to valid range
             newIdx = Math.max(0, Math.min(dayGroups.length - 1, newIdx));
             setCurrentTime(dayGroups[newIdx]);
