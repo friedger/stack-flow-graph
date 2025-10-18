@@ -10,16 +10,51 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ transactions, currentTimestamp, dayGroups }: TransactionTableProps) {
-  // Filter transactions up to current timestamp and get last 20
-  const visibleTransactions = transactions
-    .filter((tx) => tx.timestamp < currentTimestamp + DAY_IN_MILLIS)
+  // Filter transactions up to current timestamp
+  const filteredTransactions = transactions
+    .filter((tx) => tx.timestamp < currentTimestamp + DAY_IN_MILLIS);
+
+  // Group transactions by day
+  const groupedByDay = new Map<number, Transaction[]>();
+  filteredTransactions.forEach(tx => {
+    const dayIndex = getDayIndexAtTime(dayGroups, tx.timestamp);
+    if (!groupedByDay.has(dayIndex)) {
+      groupedByDay.set(dayIndex, []);
+    }
+    groupedByDay.get(dayIndex)!.push(tx);
+  });
+
+  // Aggregate transactions by sender-receiver pairs within each day
+  const aggregatedByDay = new Map<number, Transaction[]>();
+  groupedByDay.forEach((dayTxs, dayIndex) => {
+    const pairMap = new Map<string, Transaction>();
+    
+    dayTxs.forEach(tx => {
+      const pairKey = `${tx.sender}-${tx.recipient}`;
+      
+      if (pairMap.has(pairKey)) {
+        // Sum amounts for the same pair
+        const existing = pairMap.get(pairKey)!;
+        existing.amount += tx.amount;
+      } else {
+        // Create a copy to avoid mutating original
+        pairMap.set(pairKey, { ...tx });
+      }
+    });
+    
+    aggregatedByDay.set(dayIndex, Array.from(pairMap.values()));
+  });
+
+  // Flatten all aggregated transactions and take last 20
+  const allAggregated = Array.from(aggregatedByDay.entries())
+    .sort(([dayA], [dayB]) => dayA - dayB) // Sort by day ascending
+    .flatMap(([dayIndex, txs]) => txs.map(tx => ({ dayIndex, tx })))
     .slice(-20)
     .reverse();
 
-  // Group transactions by day
+  // Re-group for display
   const groupedTransactions = new Map<number, Transaction[]>();
-  visibleTransactions.forEach(tx => {
-    const dayIndex = getDayIndexAtTime(dayGroups, tx.timestamp);
+  allAggregated.forEach(({ dayIndex, tx }) => {
     if (!groupedTransactions.has(dayIndex)) {
       groupedTransactions.set(dayIndex, []);
     }
@@ -75,7 +110,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
         </div>
       </div>
       
-      {visibleTransactions.length === 0 ? (
+      {allAggregated.length === 0 ? (
         <div className="rounded-md border border-border p-8 text-center text-muted-foreground">
           No transactions yet
         </div>
@@ -151,7 +186,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
       )}
       
       <div className="mt-2 text-xs text-muted-foreground text-right">
-        Showing last 20 transactions per day
+        Showing last 20 aggregated transactions (grouped by sender-receiver pairs)
       </div>
     </Card>
   );
