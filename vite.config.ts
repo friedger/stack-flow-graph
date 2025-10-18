@@ -20,4 +20,7 @@ export default defineConfig(({ mode }) => ({
       external: (id) => id.includes('.test.'),
     },
   },
+  optimizeDeps: {
+    exclude: ['vitest'],
+  },
 }));
