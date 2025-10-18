@@ -35,7 +35,7 @@ export const loadDataFromFiles = async () => {
 
   const nodeAddresses = new Set(networkData.nodes.map((n) => n.id));
 
-  // Set initial balance for SP000...sip-031 contract (200m STX on Sept 17, 2025)
+  // Set initial balance for SP000...sip-031 contract (200m STX)
   const initialBalances: Map<string, number> = new Map();
   const sip031Address = networkData.nodes.find((n) =>
     isSIP031Address(n.id)

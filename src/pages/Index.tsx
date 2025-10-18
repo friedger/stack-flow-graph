@@ -2,20 +2,18 @@ import { NetworkGraph } from "@/components/NetworkGraph";
 import { StatsPanel } from "@/components/StatsPanel";
 import { TimelineControl } from "@/components/TimelineControl";
 import { TransactionTable } from "@/components/TransactionTable";
-import { loadDataFromFiles } from "@/utils/loadData";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { loadDataFromFiles } from "@/utils/loadData";
 import {
   NetworkLink,
   NetworkNode,
-  START_ENDOWMENT,
   TimeSeries,
   Transaction
 } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
-import { formatDayOnly } from "@/utils/formatters";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const Index = () => {
   const [loading, setLoading] = useState(true);

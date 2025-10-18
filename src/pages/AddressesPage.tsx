@@ -42,10 +42,10 @@ const AddressesPage = () => {
             ? orderedTransactions[orderedTransactions.length - 1].timestamp
             : Date.now();
 
-        const daysSinceSept15 = Math.floor(
+        const daysSinceStart = Math.floor(
           (lastTxDate - START_ENDOWMENT) / DAY_IN_MILLIS
         );
-        const totalDailyRewards = daysSinceSept15 * DAILY_REWARD;
+        const totalDailyRewards = daysSinceStart * DAILY_REWARD;
         setDailyRewardsMinted(totalDailyRewards);
 
         // Add minted balance and calculate final balance

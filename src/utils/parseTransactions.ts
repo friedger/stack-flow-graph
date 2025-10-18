@@ -31,7 +31,7 @@ export type TimeSeries = Map<number, Map<string, number>>;
 
 const MIN_STX_THRESHOLD = 100000;
 const MIN_TRANSACTION_AMOUNT = 10; // Minimum transaction amount in STX
-export const START_ENDOWMENT = new Date("2025-07-30T00:00:00Z").getTime();
+export const START_ENDOWMENT = 1753835271; /// new Date("2025-07-30T00:00:00Z").getTime();
 export const DAILY_REWARD = 68400;
 export const SIP_031_ADDRESS = "SP000000000000000000002Q6VF78.sip-031";
 export const DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
@@ -200,23 +200,12 @@ export function calculateGroupBalances(
     console.log("new group", newGroup, tx.timestamp);
     if (newGroup) {
       // Snapshot all balances at previous timestamp
-      nodeAddresses.forEach((addr) => {
-        let balance = balances.get(addr) || 0;
-
-        // Add daily rewards for sip-031 contract
-        // only add dailyRewards for the first tx of the day
-        if (addr === SIP_031_ADDRESS && previousTimestamp > START_ENDOWMENT) {
-          const daysSinceSept17 = Math.floor(
-            (previousTimestamp - START_ENDOWMENT) / DAY_IN_MILLIS
-          );
-          balance += daysSinceSept17 * DAILY_REWARD;
-        }
-        balances.set(addr, balance);
-      });
-      // Save snapshot
-      timeSeriesData.set(previousTimestamp, balances);
-      console.log(previousTimestamp, balances);
-      balances = new Map(balances.entries());
+      ({ balances } = saveSnapshot(
+        nodeAddresses,
+        balances,
+        previousTimestamp,
+        timeSeriesData
+      ));
       previousTimestamp = tx.timestamp;
     }
 
@@ -232,21 +221,37 @@ export function calculateGroupBalances(
     }
   });
 
-  // Snapshot all balances at this timestamp
+  // Snapshot all balances at previous timestamp
+  ({ balances } = saveSnapshot(
+    nodeAddresses,
+    balances,
+    previousTimestamp,
+    timeSeriesData
+  ));
+
+  return timeSeriesData;
+}
+function saveSnapshot(
+  nodeAddresses: Set<string>,
+  balances: Map<string, number>,
+  previousTimestamp: number,
+  timeSeriesData: TimeSeries
+) {
   nodeAddresses.forEach((addr) => {
     let balance = balances.get(addr) || 0;
 
     // Add daily rewards for sip-031 contract
     // only add dailyRewards for the first tx of the day
     if (addr === SIP_031_ADDRESS && previousTimestamp > START_ENDOWMENT) {
-      const daysSinceSept17 = Math.floor(
+      const daysSinceStart = Math.floor(
         (previousTimestamp - START_ENDOWMENT) / DAY_IN_MILLIS
       );
-      balance += daysSinceSept17 * DAILY_REWARD;
+      balance += daysSinceStart * DAILY_REWARD;
     }
     balances.set(addr, balance);
   });
+  // Save snapshot
   timeSeriesData.set(previousTimestamp, balances);
-
-  return timeSeriesData;
+  balances = new Map(balances.entries());
+  return { balances };
 }
