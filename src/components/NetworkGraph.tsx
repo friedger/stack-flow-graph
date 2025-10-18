@@ -55,6 +55,9 @@ export function NetworkGraph({
       ? getBalancesForDay(dayGroups, currentGroupIndex - 1, timeSeriesData)
       : new Map();
     
+    // Use current day's balances for node colors
+    const currentBalances = getBalancesForDay(dayGroups, currentGroupIndex, timeSeriesData);
+    
     console.log(
       "networkgraph",
       currentGroupIndex,
@@ -161,6 +164,9 @@ export function NetworkGraph({
     simulationNodes.forEach((d: any) => {
       const balance = Math.abs(d.currentBalance);
       const size = Math.max(20, Math.min(80, Math.sqrt(balance) / 100));
+      
+      // Use current day's balance for color determination
+      const currentBalance = currentBalances.get(d.id) || 0;
 
       if (d.isContract) {
         // Square for contracts
@@ -173,7 +179,7 @@ export function NetworkGraph({
           .attr("y", d.fy - size)
           .attr(
             "fill",
-            d.currentBalance > 0
+            currentBalance > 0
               ? "hsl(var(--primary))"
               : "hsl(var(--node-inactive))"
           )
@@ -198,7 +204,7 @@ export function NetworkGraph({
           .attr("cy", d.fy)
           .attr(
             "fill",
-            d.currentBalance > 0
+            currentBalance > 0
               ? "hsl(var(--primary))"
               : "hsl(var(--node-inactive))"
           )
