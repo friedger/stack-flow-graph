@@ -43,7 +43,12 @@ export function TransactionTable({ transactions, currentTimestamp}: TransactionT
 
   return (
     <Card className="p-6 bg-card border-border">
-      <h3 className="text-lg font-semibold text-foreground mb-4">Recent Transactions</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-foreground">Recent Transactions</h3>
+        <div className="text-sm text-muted-foreground">
+          Current time: {formatDate(currentTimestamp)}
+        </div>
+      </div>
       <div className="rounded-md border border-border overflow-hidden">
         <Table>
           <TableHeader>
@@ -101,7 +106,9 @@ export function TransactionTable({ transactions, currentTimestamp}: TransactionT
           </TableBody>
         </Table>
       </div>
-      <div className="mt-2 text-xs text-muted-foreground text-right">Showing last 20 transactions</div>
+      <div className="mt-2 text-xs text-muted-foreground text-right">
+        Showing last 20 transactions (includes next 24 hours)
+      </div>
     </Card>
   );
 }
