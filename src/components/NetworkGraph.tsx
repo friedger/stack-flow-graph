@@ -407,11 +407,17 @@ export function NetworkGraph({
     let particlesCreated = 0;
 
     activeTransactions.forEach((tx) => {
-      const sourcePos = nodePositions.get(tx.sender);
-      const targetPos = nodePositions.get(tx.recipient);
+      let sourcePos = nodePositions.get(tx.sender);
+      let targetPos = nodePositions.get(tx.recipient);
 
-      if (!sourcePos || !targetPos) return;
-
+      if (!sourcePos && targetPos) {
+        sourcePos = targetPos;
+      } else if (!targetPos && sourcePos) {
+        targetPos = sourcePos;
+      } else if (!targetPos && !sourcePos) {
+        console.log("skipping", tx)
+        return;
+      }
       // Calculate particle size based on amount
       const particleSize = getParticleSize(tx.amount);
 
@@ -449,7 +455,8 @@ export function NetworkGraph({
       "Particles created:",
       particlesCreated,
       "for day index:",
-      currentGroupIndex
+      currentGroupIndex,
+      activeTransactions.length
     );
     
     // Update the last animated day

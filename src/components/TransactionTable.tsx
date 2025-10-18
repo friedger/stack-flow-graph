@@ -52,9 +52,9 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
   };
 
   const formatAmount = (amount: number) => {
-    return (amount / 1000000).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+    return (amount).toLocaleString("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     });
   };
 
@@ -89,7 +89,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
               <div key={dayIndex} className="rounded-md border border-border overflow-hidden">
                 <div className="bg-muted px-4 py-2.5 flex items-center justify-between">
                   <span className="font-semibold text-foreground">
-                    Day {dayIndex} - {formatDayHeader(dayStart)}
+                    {formatDate(dayStart)} (+24h)
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {dayTransactions.length} {dayTransactions.length === 1 ? 'transaction' : 'transactions'}
@@ -151,7 +151,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
       )}
       
       <div className="mt-2 text-xs text-muted-foreground text-right">
-        Showing last 20 transactions (includes next 24 hours)
+        Showing last 20 transactions per day
       </div>
     </Card>
   );

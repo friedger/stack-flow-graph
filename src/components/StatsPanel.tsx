@@ -43,7 +43,7 @@ export function StatsPanel({ nodes, totalTransactions, currentTimestamp, dayGrou
 
       <Card className="p-4 bg-card border-border">
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Total STX (excl. SIP-031)</p>
+          <p className="text-xs text-muted-foreground">Total STX from SIP-031</p>
           <p className="text-2xl font-bold text-primary">
             {totalSTXBalance.toFixed(2)}M
           </p>
