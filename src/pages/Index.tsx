@@ -243,18 +243,6 @@ const Index = () => {
           currentTimestamp={currentTime}
           dayGroups={dayGroups}
         />
-
-        {/* Footer Info */}
-        <div className="text-center text-sm text-muted-foreground space-y-1">
-          <p>Displaying addresses with ≥100,000 STX total volume</p>
-          <p className="font-mono text-xs">
-            {nodes.length} active addresses • {links.length} connections •{" "}
-            {transactions.length} transactions
-          </p>
-          <p className="font-mono text-xs">
-            from {formatDayOnly(minTime)} until {formatDayOnly(maxTime)}{" "}
-          </p>
-        </div>
       </div>
     </div>
   );
