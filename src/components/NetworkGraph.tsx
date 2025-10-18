@@ -407,48 +407,29 @@ export function NetworkGraph({
     let particlesCreated = 0;
 
     activeTransactions.forEach((tx) => {
-      let sourcePos = nodePositions.get(tx.sender);
-      let targetPos = nodePositions.get(tx.recipient);
-
-      if (!sourcePos && targetPos) {
-        sourcePos = targetPos;
-      } else if (!targetPos && sourcePos) {
-        targetPos = sourcePos;
-      } else if (!targetPos && !sourcePos) {
-        console.log("skipping", tx)
+      const sourcePos = nodePositions.get(tx.sender);
+      const targetPos = nodePositions.get(tx.recipient);
+      
+      // Case 1: Both nodes are in the network
+      if (sourcePos && targetPos) {
+        createParticleAnimation(particleGroup, sourcePos, targetPos, tx.amount, particleAnimationDuration);
+        particlesCreated++;
+      }
+      // Case 2: Outgoing transaction (node → external)
+      else if (sourcePos && !targetPos) {
+        createOutgoingParticleAnimation(particleGroup, sourcePos, dimensions, tx.amount, particleAnimationDuration);
+        particlesCreated++;
+      }
+      // Case 3: Incoming transaction (external → node)
+      else if (!sourcePos && targetPos) {
+        createIncomingParticleAnimation(particleGroup, targetPos, dimensions, tx.amount, particleAnimationDuration);
+        particlesCreated++;
+      }
+      // Case 4: Both external (skip)
+      else {
+        console.log("Skipping transaction between two external addresses:", tx);
         return;
       }
-      // Calculate particle size based on amount
-      const particleSize = getParticleSize(tx.amount);
-
-      particlesCreated++;
-
-      // Create particle at source position
-      const particle = particleGroup
-        .append("circle")
-        .attr("class", "transaction-particle")
-        .attr("cx", sourcePos.x)
-        .attr("cy", sourcePos.y)
-        .attr("r", particleSize)
-        .attr("fill", "hsl(var(--accent))")
-        .attr("stroke", "hsl(var(--accent-glow))")
-        .attr("stroke-width", 1.5)
-        .style("opacity", 0)
-        .style("filter", "drop-shadow(0 0 4px hsl(var(--accent)))");
-
-      // Animate particle from source to target
-      particle
-        .transition()
-        .duration(100)
-        .style("opacity", 0.8)
-        .transition()
-        .duration(particleAnimationDuration - 200)
-        .attr("cx", targetPos.x)
-        .attr("cy", targetPos.y)
-        .transition()
-        .duration(100)
-        .style("opacity", 0)
-        .remove();
     });
 
     console.log(
@@ -496,4 +477,134 @@ function getParticleSize(amountInSTX: number) {
           MIN_PARTICLE_SIZE + Math.sqrt(amountInSTX / AMOUNT_FACTOR)
         );
   return particleSize;
+}
+
+// Helper to create standard particle animation between two known nodes
+function createParticleAnimation(
+  particleGroup: any,
+  sourcePos: {x: number, y: number},
+  targetPos: {x: number, y: number},
+  amount: number,
+  duration: number
+) {
+  const particleSize = getParticleSize(amount);
+  
+  const particle = particleGroup
+    .append("circle")
+    .attr("class", "transaction-particle")
+    .attr("cx", sourcePos.x)
+    .attr("cy", sourcePos.y)
+    .attr("r", particleSize)
+    .attr("fill", "hsl(var(--accent))")
+    .attr("stroke", "hsl(var(--accent-glow))")
+    .attr("stroke-width", 1.5)
+    .style("opacity", 0)
+    .style("filter", "drop-shadow(0 0 4px hsl(var(--accent)))");
+
+  particle
+    .transition()
+    .duration(100)
+    .style("opacity", 0.8)
+    .transition()
+    .duration(duration - 200)
+    .attr("cx", targetPos.x)
+    .attr("cy", targetPos.y)
+    .transition()
+    .duration(100)
+    .style("opacity", 0)
+    .remove();
+}
+
+// Outgoing: node → external (particle moves outward and fades)
+function createOutgoingParticleAnimation(
+  particleGroup: any,
+  sourcePos: {x: number, y: number},
+  dimensions: {width: number, height: number},
+  amount: number,
+  duration: number
+) {
+  const particleSize = getParticleSize(amount);
+  
+  // Calculate direction: away from center of canvas
+  const centerX = dimensions.width / 2;
+  const centerY = dimensions.height / 2;
+  const dx = sourcePos.x - centerX;
+  const dy = sourcePos.y - centerY;
+  const angle = Math.atan2(dy, dx);
+  
+  // Calculate exit point at edge of canvas
+  const distance = Math.max(dimensions.width, dimensions.height) * 0.6;
+  const exitX = sourcePos.x + Math.cos(angle) * distance;
+  const exitY = sourcePos.y + Math.sin(angle) * distance;
+  
+  const particle = particleGroup
+    .append("circle")
+    .attr("class", "transaction-particle")
+    .attr("cx", sourcePos.x)
+    .attr("cy", sourcePos.y)
+    .attr("r", particleSize)
+    .attr("fill", "hsl(var(--accent))")
+    .attr("stroke", "hsl(var(--accent-glow))")
+    .attr("stroke-width", 1.5)
+    .style("opacity", 0)
+    .style("filter", "drop-shadow(0 0 4px hsl(var(--accent)))");
+
+  // Fade in briefly, move outward while fading out
+  particle
+    .transition()
+    .duration(100)
+    .style("opacity", 0.8)
+    .transition()
+    .duration(duration - 100)
+    .attr("cx", exitX)
+    .attr("cy", exitY)
+    .style("opacity", 0)
+    .remove();
+}
+
+// Incoming: external → node (particle appears and moves inward)
+function createIncomingParticleAnimation(
+  particleGroup: any,
+  targetPos: {x: number, y: number},
+  dimensions: {width: number, height: number},
+  amount: number,
+  duration: number
+) {
+  const particleSize = getParticleSize(amount);
+  
+  // Calculate direction: from edge toward the target node
+  const centerX = dimensions.width / 2;
+  const centerY = dimensions.height / 2;
+  const dx = targetPos.x - centerX;
+  const dy = targetPos.y - centerY;
+  const angle = Math.atan2(dy, dx);
+  
+  // Calculate entry point at edge of canvas
+  const distance = Math.max(dimensions.width, dimensions.height) * 0.6;
+  const entryX = targetPos.x + Math.cos(angle) * distance;
+  const entryY = targetPos.y + Math.sin(angle) * distance;
+  
+  const particle = particleGroup
+    .append("circle")
+    .attr("class", "transaction-particle")
+    .attr("cx", entryX)
+    .attr("cy", entryY)
+    .attr("r", particleSize)
+    .attr("fill", "hsl(var(--accent))")
+    .attr("stroke", "hsl(var(--accent-glow))")
+    .attr("stroke-width", 1.5)
+    .style("opacity", 0.2)
+    .style("filter", "drop-shadow(0 0 4px hsl(var(--accent)))");
+
+  // Move inward while fading in, then briefly fade out
+  particle
+    .transition()
+    .duration(duration - 100)
+    .attr("cx", targetPos.x)
+    .attr("cy", targetPos.y)
+    .style("opacity", 0.8)
+    .transition()
+    .duration(100)
+    .style("opacity", 0)
+    .remove();
 }
