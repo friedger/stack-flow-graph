@@ -19,7 +19,7 @@ All colors MUST be HSL.
 
     --primary: 24 95% 53%;
     --primary-foreground: 210 40% 98%;
-    --primary-glow: 24 100% 60%;
+    --primary-glow: 24 100% 65%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -27,9 +27,9 @@ All colors MUST be HSL.
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 280 61% 50%;
+    --accent: 142 70% 45%;
     --accent-foreground: 210 40% 98%;
-    --accent-glow: 280 61% 65%;
+    --accent-glow: 142 70% 55%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
@@ -41,14 +41,14 @@ All colors MUST be HSL.
     --radius: 0.75rem;
 
     /* Network visualization colors */
-    --node-active: 24 95% 53%;
+    --node-active: 142 70% 45%;
     --node-inactive: 217.2 32.6% 35%;
-    --link-color: 24 80% 45%;
+    --link-color: 24 90% 50%;
     --link-active: 24 95% 60%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(24 95% 53%), hsl(24 100% 60%));
-    --gradient-accent: linear-gradient(135deg, hsl(280 61% 50%), hsl(280 61% 65%));
+    --gradient-primary: linear-gradient(135deg, hsl(24 95% 53%), hsl(24 100% 65%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 70% 45%), hsl(142 70% 55%));
     --gradient-bg: radial-gradient(ellipse at top, hsl(220 26% 18%), hsl(220 26% 14%));
 
     /* Shadows */
