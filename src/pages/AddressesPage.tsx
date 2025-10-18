@@ -1,30 +1,44 @@
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { loadDataFromFiles } from "@/utils/loadData";
-import { NetworkNode, isSIP031Address } from "@/utils/parseTransactions";
+import { NetworkNode, isSIP031Address, DAILY_REWARD, SEPT_15_START, DAY_IN_MILLIS } from "@/utils/parseTransactions";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-type AddressData = NetworkNode & { initialBalance: number; finalBalance: number };
+type AddressData = NetworkNode & { minted: number; finalBalance: number };
 
 const AddressesPage = () => {
   const [loading, setLoading] = useState(true);
   const [addressData, setAddressData] = useState<AddressData[]>([]);
+  const [dailyRewardsMinted, setDailyRewardsMinted] = useState(0);
+  const [lastTransactionDate, setLastTransactionDate] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { networkData } = await loadDataFromFiles();
+        const { networkData, orderedTransactions } = await loadDataFromFiles();
         
-        // Add initial balance and calculate final balance
+        // Calculate the last transaction date and daily rewards
+        const lastTxDate = orderedTransactions.length > 0 
+          ? orderedTransactions[orderedTransactions.length - 1].timestamp 
+          : Date.now();
+        setLastTransactionDate(lastTxDate);
+        
+        const daysSinceSept15 = Math.floor((lastTxDate - SEPT_15_START) / DAY_IN_MILLIS);
+        const totalDailyRewards = daysSinceSept15 * DAILY_REWARD;
+        setDailyRewardsMinted(totalDailyRewards);
+        
+        // Add minted balance and calculate final balance
         const enrichedData: AddressData[] = networkData.nodes.map(node => {
-          const initialBalance = isSIP031Address(node.id) ? 200_000_000 : 0;
-          const finalBalance = initialBalance + node.received - node.sent;
+          const initialMint = isSIP031Address(node.id) ? 200_000_000 : 0;
+          const dailyRewards = isSIP031Address(node.id) ? totalDailyRewards : 0;
+          const minted = initialMint + dailyRewards;
+          const finalBalance = minted + node.received - node.sent;
           return {
             ...node,
-            initialBalance,
+            minted,
             finalBalance
           };
         });
@@ -40,16 +54,33 @@ const AddressesPage = () => {
     loadData();
   }, []);
 
-  // Calculate totals
-  const totals = addressData.reduce(
+  // Calculate totals for displayed addresses
+  const displayedTotals = addressData.reduce(
     (acc, addr) => ({
-      initialBalance: acc.initialBalance + addr.initialBalance,
+      minted: acc.minted + addr.minted,
       received: acc.received + addr.received,
       sent: acc.sent + addr.sent,
       finalBalance: acc.finalBalance + addr.finalBalance,
     }),
-    { initialBalance: 0, received: 0, sent: 0, finalBalance: 0 }
+    { minted: 0, received: 0, sent: 0, finalBalance: 0 }
   );
+
+  // Calculate low volume addresses to balance the totals
+  const totalMinted = 200_000_000 + dailyRewardsMinted;
+  const lowVolumeMinted = totalMinted - displayedTotals.minted;
+  const lowVolumeFinalBalance = totalMinted - displayedTotals.finalBalance;
+  
+  // Low volume addresses: minted = final balance (they haven't transacted)
+  const lowVolumeReceived = 0;
+  const lowVolumeSent = 0;
+
+  // Grand totals including low volume addresses
+  const grandTotals = {
+    minted: displayedTotals.minted + lowVolumeMinted,
+    received: displayedTotals.received + lowVolumeReceived,
+    sent: displayedTotals.sent + lowVolumeSent,
+    finalBalance: displayedTotals.finalBalance + lowVolumeFinalBalance
+  };
 
   const formatAddress = (address: string) => {
     return `${address.substring(0, 10)}...${address.substring(address.length - 8)}`;
@@ -102,7 +133,7 @@ const AddressesPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-64">Address</TableHead>
-                  <TableHead className="text-right w-36">Initial (STX)</TableHead>
+                  <TableHead className="text-right w-36">Minted (STX)</TableHead>
                   <TableHead className="text-right w-36">Received (STX)</TableHead>
                   <TableHead className="text-right w-36">Sent (STX)</TableHead>
                   <TableHead className="text-right w-36">Final Balance (STX)</TableHead>
@@ -122,7 +153,7 @@ const AddressesPage = () => {
                       </a>
                     </TableCell>
                     <TableCell className="text-right font-mono text-base py-3">
-                      {formatAmount(addr.initialBalance)}
+                      {formatAmount(addr.minted)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-base py-3">
                       {formatAmount(addr.received)}
@@ -138,24 +169,43 @@ const AddressesPage = () => {
                   </TableRow>
                 ))}
                 
-                {/* Totals Row */}
+                {/* Low Volume Addresses Row */}
+                <TableRow className="bg-muted/30 border-t border-border">
+                  <TableCell className="py-3 text-muted-foreground italic">
+                    Other Low Volume Addresses
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
+                    {formatAmount(lowVolumeMinted)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
+                    {formatAmount(lowVolumeReceived)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
+                    {formatAmount(lowVolumeSent)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
+                    {formatAmount(lowVolumeFinalBalance)}
+                  </TableCell>
+                </TableRow>
+                
+                {/* Grand Totals Row */}
                 <TableRow className="bg-muted/50 font-semibold border-t-2 border-border">
                   <TableCell className="py-3">
                     <span className="font-bold">TOTAL</span>
                   </TableCell>
                   <TableCell className="text-right font-mono text-base py-3">
-                    {formatAmount(totals.initialBalance)}
+                    {formatAmount(grandTotals.minted)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-base py-3">
-                    {formatAmount(totals.received)}
+                    {formatAmount(grandTotals.received)}
                   </TableCell>
                   <TableCell className="text-right font-mono text-base py-3">
-                    {formatAmount(totals.sent)}
+                    {formatAmount(grandTotals.sent)}
                   </TableCell>
                   <TableCell className={`text-right font-mono text-base font-bold py-3 ${
-                    totals.finalBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                    grandTotals.finalBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}>
-                    {formatAmount(totals.finalBalance)}
+                    {formatAmount(grandTotals.finalBalance)}
                   </TableCell>
                 </TableRow>
               </TableBody>
