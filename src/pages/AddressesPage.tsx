@@ -70,9 +70,11 @@ const AddressesPage = () => {
   const lowVolumeMinted = totalMinted - displayedTotals.minted;
   const lowVolumeFinalBalance = totalMinted - displayedTotals.finalBalance;
   
-  // Low volume addresses: minted = final balance (they haven't transacted)
-  const lowVolumeReceived = 0;
-  const lowVolumeSent = 0;
+  // Calculate received and sent for low volume addresses
+  // Total sent must equal total received across all addresses
+  const netDifference = displayedTotals.sent - displayedTotals.received;
+  const lowVolumeReceived = netDifference > 0 ? netDifference : 0;
+  const lowVolumeSent = netDifference < 0 ? -netDifference : 0;
 
   // Grand totals including low volume addresses
   const grandTotals = {
