@@ -74,7 +74,6 @@ describe("parseTransactions", () => {
   it("should generate correct timeseries data", async () => {
     // Check that balances are correct at each timestamp
     // This is a simple check, adapt if your function returns differently
-    console.log(timeSeriesData)
     expect(timeSeriesData.get(groups[0])).toEqual(
       new Map(
         Object.entries({

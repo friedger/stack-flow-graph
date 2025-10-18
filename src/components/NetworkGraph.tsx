@@ -59,12 +59,6 @@ export function NetworkGraph({
     // Use current day's balances for node colors
     const currentBalances = getBalancesForDay(dayGroups, currentGroupIndex, timeSeriesData);
     
-    console.log(
-      "networkgraph",
-      currentGroupIndex,
-      dayGroups[currentGroupIndex] + 1
-    );
-
     // Load saved positions from localStorage
     const savedPositions = localStorage.getItem("networkGraphPositions");
     const positionsMap = savedPositions ? JSON.parse(savedPositions) : {};
@@ -397,11 +391,6 @@ export function NetworkGraph({
     const svg = d3.select(svgRef.current);
     const g = svg.select("g");
 
-    console.log("Animating day:", {
-      currentDayIndex: currentGroupIndex,
-      previousDayIndex: prevGroupIndexRef.current,
-    });
-
     // Load positions
     const savedPositions = localStorage.getItem("networkGraphPositions");
     const positionsMap = savedPositions ? JSON.parse(savedPositions) : {};
@@ -465,14 +454,6 @@ export function NetworkGraph({
         return;
       }
     });
-
-    console.log(
-      "Particles created:",
-      particlesCreated,
-      "for day index:",
-      currentGroupIndex,
-      activeTransactions.length
-    );
     
     // Update the ref to track this day
     prevGroupIndexRef.current = currentGroupIndex;

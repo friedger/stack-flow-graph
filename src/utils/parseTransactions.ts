@@ -29,7 +29,7 @@ export interface TimeSeriesBalance {
 }
 export type TimeSeries = Map<number, Map<string, number>>;
 
-const MIN_STX_THRESHOLD = 100000;
+export const MIN_STX_THRESHOLD = 100000;
 const MIN_TRANSACTION_AMOUNT = 10; // Minimum transaction amount in STX
 export const START_ENDOWMENT = 1753835271000; /// new Date("2025-07-30T00:00:00Z").getTime();
 export const DAILY_REWARD = 68400;
@@ -197,7 +197,6 @@ export function calculateGroupBalances(
   // Process transactions chronologically
   orderedTransactions.forEach((tx) => {
     const newGroup = tx.timestamp >= previousTimestamp + DAY_IN_MILLIS;
-    console.log("new group", newGroup, tx.timestamp);
     if (newGroup) {
       // Snapshot all balances at previous timestamp
       ({ balances } = saveSnapshot(

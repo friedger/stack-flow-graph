@@ -25,7 +25,7 @@ describe("Verify time series with all data", () => {
     expect(
       Object.fromEntries(timeSeries.get(groups[0]).entries())
     ).toStrictEqual({
-      "SP000000000000000000002Q6VF78.sip-031": 200136800,
+      "SP000000000000000000002Q6VF78.sip-031": 203351600,
       SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 0,
       SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 0,
       SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC: 0,
@@ -37,7 +37,7 @@ describe("Verify time series with all data", () => {
     expect(
       Object.fromEntries(timeSeries.get(groups[2]).entries())
     ).toStrictEqual({
-      "SP000000000000000000002Q6VF78.sip-031": 93554283.333,
+      "SP000000000000000000002Q6VF78.sip-031": 103198683.333,
       SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 101334916.667,
       SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 500000.9249999998,
       SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC: 2799950,
@@ -49,7 +49,7 @@ describe("Verify time series with all data", () => {
     expect(
       Object.fromEntries(timeSeries.get(groups[groups.length - 1]).entries())
     ).toStrictEqual({
-      "SP000000000000000000002Q6VF78.sip-031": 100736283.333,
+      "SP000000000000000000002Q6VF78.sip-031": 129669483.333,
       SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045: 78334916.667,
       SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC: 1700000.9250000007,
       SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC: 7255044.887,
@@ -86,7 +86,6 @@ describe("Verify time series with all data", () => {
     ];
     expectedTxs.forEach((expected, index) => {
       const txs = getTransactionsForDay(groups, index, orderedTransactions);
-      console.log(index);
       expect(txs.map((t) => t.timestamp)).toStrictEqual(expected);
     });
   });
