@@ -2,7 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DAY_IN_MILLIS, Transaction } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
-import { formatDate, formatDayOnly, formatAddress, formatAmount } from "@/utils/formatters";
+import { formatDate, formatDayOnly, formatAmount } from "@/utils/formatters";
+import { AddressLink } from "@/components/AddressLink";
 import { ExternalLink } from "lucide-react";
 
 interface TransactionTableProps {
@@ -77,36 +78,33 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
   // Sort by day index (descending - most recent first)
   const sortedDays = Array.from(groupedTransactions.keys()).sort((a, b) => b - a);
 
-  const getExplorerAddressUrl = (address: string) => {
-    return `https://explorer.hiro.so/address/${address}?chain=mainnet`;
-  };
-
   const getExplorerTxUrl = (txId: string) => {
     return `https://explorer.hiro.so/txid/${txId}?chain=mainnet`;
   };
 
   return (
-    <Card className="p-6 bg-card border-border">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Recent Transactions</h3>
-        <div className="text-sm text-muted-foreground">
-          Current time: {formatDate(currentTimestamp)}
+    <Card className="p-4 sm:p-5 md:p-6 bg-card border-border">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 md:mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground">Recent Transactions</h3>
+        <div className="text-xs sm:text-sm text-muted-foreground">
+          <span className="hidden sm:inline">Current time: {formatDate(currentTimestamp)}</span>
+          <span className="sm:hidden">{formatDayOnly(currentTimestamp)}</span>
         </div>
       </div>
       
       {allAggregated.length === 0 ? (
-        <div className="rounded-md border border-border p-8 text-center text-muted-foreground">
+        <div className="rounded-md border border-border p-6 sm:p-8 text-center text-sm text-muted-foreground">
           No transactions yet
         </div>
       ) : (
-        <div className="rounded-md border border-border overflow-hidden">
+        <div className="rounded-md border border-border overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-right w-32">Amount (STX)</TableHead>
-                <TableHead className="w-40">From</TableHead>
-                <TableHead className="w-40">To</TableHead>
-                <TableHead className="w-48">Transactions</TableHead>
+                <TableHead className="text-right min-w-[100px] sm:min-w-[120px] md:w-32 whitespace-nowrap">Amount</TableHead>
+                <TableHead className="min-w-[120px] sm:min-w-[140px] md:w-40">From</TableHead>
+                <TableHead className="min-w-[120px] sm:min-w-[140px] md:w-40">To</TableHead>
+                <TableHead className="min-w-[140px] sm:min-w-[160px] md:w-48">Transactions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -117,47 +115,33 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
                 return (
                   <>
                     <TableRow key={`day-${dayIndex}`} className="bg-muted hover:bg-muted">
-                      <TableCell colSpan={4} className="py-2.5 text-center font-semibold text-foreground">
+                      <TableCell colSpan={4} className="py-2 text-center text-xs sm:text-sm font-semibold text-foreground">
                         {formatDayOnly(dayStart)} (+24h)
                       </TableCell>
                     </TableRow>
                     {dayTransactions.map((tx, idx) => (
                       <TableRow key={`${dayIndex}-${idx}`} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
-                        <TableCell className="text-right font-mono text-base font-semibold py-3 w-32">
+                        <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base font-semibold py-2 sm:py-3">
                           {formatAmount(tx.amount)}
                         </TableCell>
-                        <TableCell className="font-mono text-xs py-3 w-40">
-                          <a
-                            href={getExplorerAddressUrl(tx.sender)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
-                          >
-                            {formatAddress(tx.sender)}
-                          </a>
+                        <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
+                          <AddressLink address={tx.sender} variant="primary" />
                         </TableCell>
-                        <TableCell className="font-mono text-xs py-3 w-40">
-                          <a
-                            href={getExplorerAddressUrl(tx.recipient)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 text-accent hover:bg-accent/20 transition-colors border border-accent/20"
-                          >
-                            {formatAddress(tx.recipient)}
-                          </a>
+                        <TableCell className="font-mono text-[10px] sm:text-xs py-2 sm:py-3">
+                          <AddressLink address={tx.recipient} variant="accent" />
                         </TableCell>
-                        <TableCell className="py-3 w-48">
-                          <div className="flex gap-1.5 flex-wrap">
+                        <TableCell className="py-2 sm:py-3">
+                          <div className="flex gap-1 sm:gap-1.5 flex-wrap">
                             {tx.txDetails.map((detail, i) => (
                               <a
                                 key={i}
                                 href={getExplorerTxUrl(detail.txId)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center justify-center w-7 h-7 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
+                                className="inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20"
                                 title={`${formatAmount(detail.amount)} STX\n${formatDate(detail.timestamp)}`}
                               >
-                                <ExternalLink className="w-3.5 h-3.5" />
+                                <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                               </a>
                             ))}
                           </div>
@@ -172,7 +156,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
         </div>
       )}
       
-      <div className="mt-2 text-xs text-muted-foreground text-right">
+      <div className="mt-2 text-[10px] sm:text-xs text-muted-foreground text-center sm:text-right">
         Showing last 20 aggregated transactions (grouped by sender-receiver pairs)
       </div>
     </Card>

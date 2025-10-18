@@ -56,3 +56,12 @@ export const formatAmount = (amount: number): string => {
     maximumFractionDigits: 0,
   });
 };
+
+/**
+ * Check if an address is a contract address
+ * @param address - Blockchain address to check
+ * @returns true if the address is a contract (contains a dot and contract name)
+ */
+export const isContractAddress = (address: string): boolean => {
+  return address.includes('.');
+};

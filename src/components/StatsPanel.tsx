@@ -40,36 +40,37 @@ export function StatsPanel({
   }, [currentTimestamp, dayGroups, timeSeriesData]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <Card className="p-4 bg-card border-border">
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Active Addresses</p>
-          <p className="text-2xl font-bold text-primary">{nodes.length}</p>
-          <p className="text-xs text-muted-foreground">≥100k STX volume</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+      <Card className="p-3 sm:p-4 bg-card border-border">
+        <div className="space-y-0.5 sm:space-y-1">
+          <p className="text-[10px] sm:text-xs text-muted-foreground">Active Addresses</p>
+          <p className="text-xl sm:text-2xl font-bold text-primary">{nodes.length}</p>
+          <p className="text-[10px] sm:text-xs text-muted-foreground">≥100k STX volume</p>
         </div>
       </Card>
 
-      <Card className="p-4 bg-card border-border">
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">
+      <Card className="p-3 sm:p-4 bg-card border-border">
+        <div className="space-y-0.5 sm:space-y-1">
+          <p className="text-[10px] sm:text-xs text-muted-foreground">
             Total STX from SIP-031
           </p>
-          <p className="text-2xl font-bold text-primary">
+          <p className="text-xl sm:text-2xl font-bold text-primary">
             {totalSTXBalance.toFixed(2)}M STX
           </p>
-          <p className="text-xs text-accent">
-            until {formatDate(currentTimestamp)}
+          <p className="text-[10px] sm:text-xs text-accent">
+            <span className="hidden sm:inline">until {formatDate(currentTimestamp)}</span>
+            <span className="sm:hidden">until {formatDayOnly(currentTimestamp)}</span>
           </p>
         </div>
       </Card>
 
-      <Card className="p-4 bg-card border-border">
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">Total Transactions</p>
-          <p className="text-2xl font-bold text-foreground">
+      <Card className="p-3 sm:p-4 bg-card border-border sm:col-span-2 lg:col-span-1">
+        <div className="space-y-0.5 sm:space-y-1">
+          <p className="text-[10px] sm:text-xs text-muted-foreground">Total Transactions</p>
+          <p className="text-xl sm:text-2xl font-bold text-foreground">
             {totalTransactions}
           </p>
-          <p className="text-xs text-accent">
+          <p className="text-[10px] sm:text-xs text-accent">
             {formatDayOnly(dayGroups[0])} - {formatDayOnly(dayGroups[dayGroups.length -1])}
           </p>
         </div>

@@ -162,24 +162,24 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-3 sm:p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+        <div className="text-center space-y-3 md:space-y-4">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             Stacks Endowment (SIP-031)
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-sm sm:text-base md:text-lg px-4">
             Interactive visualization of STX transactions over time
           </p>
-          <div className="flex items-center justify-center gap-3">
-            <Link to="/addresses">
-              <Button variant="outline">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
+            <Link to="/addresses" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">
                 View All Addresses
               </Button>
             </Link>
-            <Link to="/transactions">
-              <Button variant="outline">
+            <Link to="/transactions" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto">
                 View All Transactions
               </Button>
             </Link>
@@ -196,10 +196,7 @@ const Index = () => {
         />
 
         {/* Network Graph */}
-        <div
-          className="bg-card border border-border rounded-xl overflow-hidden shadow-lg"
-          style={{ height: "600px" }}
-        >
+        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg h-[400px] sm:h-[500px] md:h-[600px]">
           <NetworkGraph
             nodes={nodes}
             links={links}

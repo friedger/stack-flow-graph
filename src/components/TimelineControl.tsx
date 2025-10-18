@@ -60,34 +60,36 @@ export function TimelineControl({
 
 
   return (
-    <Card className="p-6 bg-card border-border">
-      <div className="space-y-4">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-foreground">
+    <Card className="p-4 sm:p-5 md:p-6 bg-card border-border">
+      <div className="space-y-3 md:space-y-4">
+        <div className="space-y-3 md:space-y-4">
+          <h3 className="text-base sm:text-lg font-semibold text-foreground text-center sm:text-left">
             Timeline Control
           </h3>
 
           {/* Day Navigation */}
-          <div className="flex items-center gap-2 justify-center">
+          <div className="flex items-center gap-2 justify-center flex-wrap">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePreviousDay}
               disabled={!hasPreviousDay}
-              className="gap-1"
+              className="gap-1 text-xs sm:text-sm"
             >
-              <ChevronLeft className="h-4 w-4" />
-              Previous
+              <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Previous</span>
+              <span className="xs:hidden">Prev</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={handleNextDay}
               disabled={!hasNextDay}
-              className="gap-1"
+              className="gap-1 text-xs sm:text-sm"
             >
-              Next
-              <ChevronRight className="h-4 w-4" />
+              <span className="hidden xs:inline">Next</span>
+              <span className="xs:hidden">Next</span>
+              <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
 
@@ -97,29 +99,29 @@ export function TimelineControl({
               variant="outline"
               size="icon"
               onClick={onReset}
-              className="h-9 w-9"
+              className="h-8 w-8 sm:h-9 sm:w-9"
             >
-              <RotateCcw className="h-4 w-4" />
+              <RotateCcw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
             <Button
               variant="default"
               size="icon"
               onClick={onPlayPause}
-              className="h-9 w-9"
+              className="h-8 w-8 sm:h-9 sm:w-9"
             >
               {isPlaying ? (
-                <Pause className="h-4 w-4" />
+                <Pause className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               ) : (
-                <Play className="h-4 w-4" />
+                <Play className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               )}
             </Button>
           </div>
         </div>
 
         <div className="space-y-2">
-          <div className="relative pt-6 pb-2">
+          <div className="relative pt-5 sm:pt-6 pb-2">
             {/* Day group markers - positioned above the slider */}
-            <div className="absolute top-0 left-0 right-0 h-6 pointer-events-none">
+            <div className="absolute top-0 left-0 right-0 h-5 sm:h-6 pointer-events-none">
               {dayGroups.map((timestamp, idx) => {
                 const position =
                   ((timestamp - minTime) / (maxTime - minTime)) * 100;
@@ -130,7 +132,7 @@ export function TimelineControl({
                     style={{ left: `${position}%` }}
                     title={formatDayOnly(timestamp)}
                   >
-                    <div className="w-0.5 h-6 bg-primary/40 -translate-x-1/2 group-hover:bg-primary transition-colors" />
+                    <div className="w-0.5 h-5 sm:h-6 bg-primary/40 -translate-x-1/2 group-hover:bg-primary transition-colors" />
                   </div>
                 );
               })}
@@ -146,26 +148,29 @@ export function TimelineControl({
             />
           </div>
 
-          <div className="flex justify-between text-sm text-muted-foreground pt-1">
-            <span>{formatDate(minTime)}</span>
-            <span className="font-mono text-primary font-semibold">
-              {formatDate(currentTime)}
+          <div className="flex justify-between text-[10px] sm:text-xs md:text-sm text-muted-foreground pt-1 gap-2">
+            <span className="hidden sm:inline">{formatDate(minTime)}</span>
+            <span className="sm:hidden">{formatDayOnly(minTime)}</span>
+            <span className="font-mono text-primary font-semibold text-center flex-1">
+              <span className="hidden sm:inline">{formatDate(currentTime)}</span>
+              <span className="sm:hidden">{formatDayOnly(currentTime)}</span>
             </span>
-            <span>{formatDate(maxTime)}</span>
+            <span className="hidden sm:inline">{formatDate(maxTime)}</span>
+            <span className="sm:hidden">{formatDayOnly(maxTime)}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 pt-2 border-t border-border">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 border-t border-border">
           <div>
-            <div className="text-xs text-muted-foreground">Progress</div>
-            <div className="text-lg font-semibold text-foreground">
+            <div className="text-[10px] sm:text-xs text-muted-foreground">Progress</div>
+            <div className="text-base sm:text-lg font-semibold text-foreground">
               {Math.round(
                 ((currentTime - minTime) / (maxTime - minTime)) * 100
               )}
               %
             </div>
           </div>
-          <div>
+          <div className="hidden sm:block">
             <div className="text-xs text-muted-foreground">Playback Speed</div>
             <div className="text-lg font-semibold text-foreground">1x</div>
           </div>
