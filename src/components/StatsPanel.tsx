@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { NetworkNode, isSIP031Address } from "@/utils/parseTransactions";
-import { formatDate } from "@/utils/formatters";
+import { formatDate, formatDayOnly } from "@/utils/formatters";
 import { useMemo } from "react";
 
 interface StatsPanelProps {
@@ -70,7 +70,7 @@ export function StatsPanel({
             {totalTransactions}
           </p>
           <p className="text-xs text-accent">
-            {formatDate(dayGroups[0])} - {formatDate(dayGroups[dayGroups.length -1])}
+            {formatDayOnly(dayGroups[0])} - {formatDayOnly(dayGroups[dayGroups.length -1])}
           </p>
         </div>
       </Card>

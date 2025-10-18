@@ -31,13 +31,13 @@ export type TimeSeries = Map<number, Map<string, number>>;
 
 const MIN_STX_THRESHOLD = 100000;
 const MIN_TRANSACTION_AMOUNT = 10; // Minimum transaction amount in STX
-export const SEPT_15_START = new Date("2025-09-15T00:00:00Z").getTime();
+export const START_ENDOWMENT = new Date("2025-07-30T00:00:00Z").getTime();
 export const DAILY_REWARD = 68400;
 export const SIP_031_ADDRESS = "SP000000000000000000002Q6VF78.sip-031";
 export const DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
 
 export function isSIP031Address(address: string): boolean {
-  return address.startsWith("SP000") && address.includes(".sip-031");
+  return address === SIP_031_ADDRESS;
 }
 
 export function shouldIncludeTransaction(amount: number): boolean {
@@ -123,7 +123,7 @@ export async function parseTransactionData(
   }
   return allTransactions
     .filter(
-      (t) => t.timestamp > SEPT_15_START && shouldIncludeTransaction(t.amount)
+      (t) => t.timestamp > START_ENDOWMENT && shouldIncludeTransaction(t.amount)
     )
     .sort((a, b) => a.timestamp - b.timestamp);
 }
@@ -205,9 +205,9 @@ export function calculateGroupBalances(
 
         // Add daily rewards for sip-031 contract
         // only add dailyRewards for the first tx of the day
-        if (addr === SIP_031_ADDRESS && previousTimestamp > SEPT_15_START) {
+        if (addr === SIP_031_ADDRESS && previousTimestamp > START_ENDOWMENT) {
           const daysSinceSept17 = Math.floor(
-            (previousTimestamp - SEPT_15_START) / DAY_IN_MILLIS
+            (previousTimestamp - START_ENDOWMENT) / DAY_IN_MILLIS
           );
           balance += daysSinceSept17 * DAILY_REWARD;
         }
@@ -238,9 +238,9 @@ export function calculateGroupBalances(
 
     // Add daily rewards for sip-031 contract
     // only add dailyRewards for the first tx of the day
-    if (addr === SIP_031_ADDRESS && previousTimestamp > SEPT_15_START) {
+    if (addr === SIP_031_ADDRESS && previousTimestamp > START_ENDOWMENT) {
       const daysSinceSept17 = Math.floor(
-        (previousTimestamp - SEPT_15_START) / DAY_IN_MILLIS
+        (previousTimestamp - START_ENDOWMENT) / DAY_IN_MILLIS
       );
       balance += daysSinceSept17 * DAILY_REWARD;
     }

@@ -1,7 +1,20 @@
 import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { loadDataFromFiles } from "@/utils/loadData";
-import { NetworkNode, isSIP031Address, DAILY_REWARD, SEPT_15_START, DAY_IN_MILLIS } from "@/utils/parseTransactions";
+import {
+  NetworkNode,
+  isSIP031Address,
+  DAILY_REWARD,
+  START_ENDOWMENT,
+  DAY_IN_MILLIS,
+} from "@/utils/parseTransactions";
 import { formatAddress, formatAmount } from "@/utils/formatters";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -14,25 +27,29 @@ const AddressesPage = () => {
   const [loading, setLoading] = useState(true);
   const [addressData, setAddressData] = useState<AddressData[]>([]);
   const [dailyRewardsMinted, setDailyRewardsMinted] = useState(0);
-  const [lastTransactionDate, setLastTransactionDate] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { networkData, orderedTransactions } = await loadDataFromFiles();
-        
+        const {
+          networkData: { nodes },
+          orderedTransactions,
+        } = await loadDataFromFiles();
+
         // Calculate the last transaction date and daily rewards
-        const lastTxDate = orderedTransactions.length > 0 
-          ? orderedTransactions[orderedTransactions.length - 1].timestamp 
-          : Date.now();
-        setLastTransactionDate(lastTxDate);
-        
-        const daysSinceSept15 = Math.floor((lastTxDate - SEPT_15_START) / DAY_IN_MILLIS);
+        const lastTxDate =
+          orderedTransactions.length > 0
+            ? orderedTransactions[orderedTransactions.length - 1].timestamp
+            : Date.now();
+
+        const daysSinceSept15 = Math.floor(
+          (lastTxDate - START_ENDOWMENT) / DAY_IN_MILLIS
+        );
         const totalDailyRewards = daysSinceSept15 * DAILY_REWARD;
         setDailyRewardsMinted(totalDailyRewards);
-        
+
         // Add minted balance and calculate final balance
-        const enrichedData: AddressData[] = networkData.nodes.map(node => {
+        const enrichedData: AddressData[] = nodes.map((node) => {
           const initialMint = isSIP031Address(node.id) ? 200_000_000 : 0;
           const dailyRewards = isSIP031Address(node.id) ? totalDailyRewards : 0;
           const minted = initialMint + dailyRewards;
@@ -40,10 +57,10 @@ const AddressesPage = () => {
           return {
             ...node,
             minted,
-            finalBalance
+            finalBalance,
           };
         });
-        
+
         setAddressData(enrichedData);
         setLoading(false);
       } catch (error) {
@@ -70,7 +87,7 @@ const AddressesPage = () => {
   const totalMinted = 200_000_000 + dailyRewardsMinted;
   const lowVolumeMinted = totalMinted - displayedTotals.minted;
   const lowVolumeFinalBalance = totalMinted - displayedTotals.finalBalance;
-  
+
   // Calculate received and sent for low volume addresses
   // Total sent must equal total received across all addresses
   const netDifference = displayedTotals.sent - displayedTotals.received;
@@ -82,7 +99,7 @@ const AddressesPage = () => {
     minted: displayedTotals.minted + lowVolumeMinted,
     received: displayedTotals.received + lowVolumeReceived,
     sent: displayedTotals.sent + lowVolumeSent,
-    finalBalance: displayedTotals.finalBalance + lowVolumeFinalBalance
+    finalBalance: displayedTotals.finalBalance + lowVolumeFinalBalance,
   };
 
   const getExplorerAddressUrl = (address: string) => {
@@ -125,15 +142,24 @@ const AddressesPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-64">Address</TableHead>
-                  <TableHead className="text-right w-36">Minted (STX)</TableHead>
-                  <TableHead className="text-right w-36">Received (STX)</TableHead>
+                  <TableHead className="text-right w-36">
+                    Minted (STX)
+                  </TableHead>
+                  <TableHead className="text-right w-36">
+                    Received (STX)
+                  </TableHead>
                   <TableHead className="text-right w-36">Sent (STX)</TableHead>
-                  <TableHead className="text-right w-36">Final Balance (STX)</TableHead>
+                  <TableHead className="text-right w-36">
+                    Final Balance (STX)
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {addressData.map((addr, idx) => (
-                  <TableRow key={idx} className="even:bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <TableRow
+                    key={idx}
+                    className="even:bg-muted/30 hover:bg-muted/50 transition-colors"
+                  >
                     <TableCell className="font-mono text-xs py-3">
                       <a
                         href={getExplorerAddressUrl(addr.id)}
@@ -153,14 +179,18 @@ const AddressesPage = () => {
                     <TableCell className="text-right font-mono text-base py-3">
                       {formatAmount(addr.sent)}
                     </TableCell>
-                    <TableCell className={`text-right font-mono text-base font-semibold py-3 ${
-                      addr.finalBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                    }`}>
+                    <TableCell
+                      className={`text-right font-mono text-base font-semibold py-3 ${
+                        addr.finalBalance >= 0
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
+                    >
                       {formatAmount(addr.finalBalance)}
                     </TableCell>
                   </TableRow>
                 ))}
-                
+
                 {/* Low Volume Addresses Row */}
                 <TableRow className="bg-muted/30 border-t border-border">
                   <TableCell className="py-3 text-muted-foreground italic">
@@ -179,7 +209,7 @@ const AddressesPage = () => {
                     {formatAmount(lowVolumeFinalBalance)}
                   </TableCell>
                 </TableRow>
-                
+
                 {/* Grand Totals Row */}
                 <TableRow className="bg-muted/50 font-semibold border-t-2 border-border">
                   <TableCell className="py-3">
@@ -194,9 +224,13 @@ const AddressesPage = () => {
                   <TableCell className="text-right font-mono text-base py-3">
                     {formatAmount(grandTotals.sent)}
                   </TableCell>
-                  <TableCell className={`text-right font-mono text-base font-bold py-3 ${
-                    grandTotals.finalBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                  }`}>
+                  <TableCell
+                    className={`text-right font-mono text-base font-bold py-3 ${
+                      grandTotals.finalBalance >= 0
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
                     {formatAmount(grandTotals.finalBalance)}
                   </TableCell>
                 </TableRow>

@@ -8,13 +8,14 @@ import { Button } from "@/components/ui/button";
 import {
   NetworkLink,
   NetworkNode,
-  SEPT_15_START,
+  START_ENDOWMENT,
   TimeSeries,
   Transaction
 } from "@/utils/parseTransactions";
 import { getDayIndexAtTime } from "@/utils/timeSeries";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { formatDayOnly } from '../utils/formatters';
 
 const Index = () => {
   const [loading, setLoading] = useState(true);
@@ -251,7 +252,7 @@ const Index = () => {
             {transactions.length} transactions
           </p>
           <p className="font-mono text-xs">
-            from {minTime} until {maxTime}{" "}
+            from {formatDayOnly(minTime)} until {formatDayOnly(maxTime)}{" "}
           </p>
         </div>
       </div>

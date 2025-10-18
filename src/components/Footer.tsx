@@ -8,7 +8,7 @@ export const Footer = () => {
           <div className="flex items-center gap-2">
             <img src="/logo.png" alt="STX Network Logo" className="h-8 w-8" />
             <span className="text-sm text-muted-foreground">
-              STX Network Visualizer
+              Stacks Endowment (SIP-031)
             </span>
           </div>
           
