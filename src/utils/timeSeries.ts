@@ -28,3 +28,55 @@ export function getTransactionsForDay(dayGroups: number[], currentDayIndex: numb
 export function getBalancesForDay(dayGroups: number[], currentDayIndex: number, timeSeriesData: TimeSeries) {
   return timeSeriesData.get(dayGroups[currentDayIndex]);
 }
+
+export function getNearestDayFromDate(
+  dateString: string | undefined,
+  sortedDayGroups: number[]
+): number {
+  if (sortedDayGroups.length === 0) {
+    return 0;
+  }
+
+  const minTimestamp = sortedDayGroups[0];
+  const maxTimestamp = sortedDayGroups[sortedDayGroups.length - 1];
+
+  if (!dateString) {
+    return minTimestamp;
+  }
+
+  const targetDate = new Date(dateString);
+  const targetTimestamp = targetDate.getTime();
+
+  if (isNaN(targetTimestamp)) {
+    return minTimestamp;
+  }
+
+  // Get the start and end of the target day (midnight to midnight)
+  const targetDayStart = new Date(targetDate);
+  targetDayStart.setHours(0, 0, 0, 0);
+  const targetDayEnd = new Date(targetDate);
+  targetDayEnd.setHours(23, 59, 59, 999);
+
+  const dayStart = targetDayStart.getTime();
+  const dayEnd = targetDayEnd.getTime();
+
+  // Find the first group that falls on the target day
+  for (const dayTimestamp of sortedDayGroups) {
+    if (dayTimestamp >= dayStart && dayTimestamp <= dayEnd) {
+      return dayTimestamp;
+    }
+    // Stop if we've passed the target day
+    if (dayTimestamp > dayEnd) {
+      break;
+    }
+  }
+
+  // No group found on the target day
+  // If target day is within the data range, return the target day start
+  if (dayStart >= minTimestamp && dayStart <= maxTimestamp) {
+    return dayStart;
+  }
+
+  // Target day is outside the data range, return default
+  return minTimestamp;
+}

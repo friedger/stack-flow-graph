@@ -23,6 +23,7 @@ const App = () => (
             <div className="flex-1">
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/day/:date" element={<Index />} />
                 <Route path="/addresses" element={<AddressesPage />} />
                 <Route path="/transactions" element={<TransactionsPage />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
