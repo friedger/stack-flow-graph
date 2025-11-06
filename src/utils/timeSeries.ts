@@ -32,7 +32,8 @@ export function getBalancesForDay(dayGroups: number[], currentDayIndex: number, 
 export function getNearestDayFromDate(
   dateString: string | undefined,
   sortedDayGroups: number[],
-  minTimestamp: number
+  minTimestamp: number,
+  maxTimestamp: number
 ): number {
   if (!dateString) {
     return minTimestamp;
@@ -65,6 +66,12 @@ export function getNearestDayFromDate(
     }
   }
 
-  // No group found on the target day, return default
+  // No group found on the target day
+  // If target day is within the data range, return the target day start
+  if (dayStart >= minTimestamp && dayStart <= maxTimestamp) {
+    return dayStart;
+  }
+
+  // Target day is outside the data range, return default
   return minTimestamp;
 }
