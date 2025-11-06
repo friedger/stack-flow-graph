@@ -18,7 +18,9 @@ const TransactionsPage = () => {
     const loadData = async () => {
       try {
         const { orderedTransactions } = await loadDataFromFiles();
-        setTransactions(orderedTransactions);
+        // Sort transactions from newest to oldest
+        const sortedTransactions = [...orderedTransactions].sort((a, b) => b.timestamp - a.timestamp);
+        setTransactions(sortedTransactions);
         setLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
