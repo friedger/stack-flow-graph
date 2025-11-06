@@ -4,7 +4,14 @@ import csv2 from "../data/transactions-SP30742YR27SYJF29W9GRS7PT2PNECBKKBQP2GHNC
 import csv3 from "../data/transactions-SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC.csv?raw";
 import csv4 from "../data/transactions-SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045.csv?raw";
 import csv5 from "../data/transactions-SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC.csv?raw";
-import { calculateGroupBalances, calculateNetworkData, isSIP031Address, parseTransactionData, TimeSeriesBalance } from "./parseTransactions";
+import csv6 from "../data/transactions-SPJYNB7A3SGVZMXKHYPJJ9V9WWPN986NRESMN3P9.csv?raw";
+import {
+  calculateGroupBalances,
+  calculateNetworkData,
+  isSIP031Address,
+  parseTransactionData,
+  TimeSeriesBalance,
+} from "./parseTransactions";
 
 export const csvFiles = [
   {
@@ -27,6 +34,10 @@ export const csvFiles = [
     name: "transactions-SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC.csv",
     content: csv5,
   },
+  {
+    name: "transactions-SPJYNB7A3SGVZMXKHYPJJ9V9WWPN986NRESMN3P9.csv",
+    content: csv6,
+  },
 ];
 
 export const loadDataFromFiles = async () => {
@@ -37,9 +48,7 @@ export const loadDataFromFiles = async () => {
 
   // Set initial balance for SP000...sip-031 contract (200m STX)
   const initialBalances: Map<string, number> = new Map();
-  const sip031Address = networkData.nodes.find((n) =>
-    isSIP031Address(n.id)
-  ).id;
+  const sip031Address = networkData.nodes.find((n) => isSIP031Address(n.id)).id;
   if (sip031Address) {
     initialBalances.set(sip031Address, 200_000_000);
   }
@@ -52,5 +61,11 @@ export const loadDataFromFiles = async () => {
 
   const groups = Array.from(timeSeries.keys());
 
-  return { timeSeries, nodeAddresses, orderedTransactions, networkData, groups };
+  return {
+    timeSeries,
+    nodeAddresses,
+    orderedTransactions,
+    networkData,
+    groups,
+  };
 };

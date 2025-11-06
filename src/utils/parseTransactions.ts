@@ -121,7 +121,18 @@ export async function parseTransactionData(
       }
     }
   }
-  return allTransactions
+  // remove duplicate transactions from allTransactions
+  const txIdSet = new Set<string>();
+  const uniqueTransactions: Transaction[] = [];
+  allTransactions.forEach((tx) => {
+    if (!txIdSet.has(tx.txId)) {
+      txIdSet.add(tx.txId);
+      uniqueTransactions.push(tx);
+    }
+  });
+
+  // sort transactions by timestamp ascending
+  return uniqueTransactions
     .filter(
       (t) => t.timestamp > START_ENDOWMENT && shouldIncludeTransaction(t.amount)
     )
