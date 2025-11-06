@@ -50,10 +50,10 @@ const NotFound = () => {
           </h2>
           <div className="space-y-2">
             <p className="text-lg text-muted-foreground max-w-md mx-auto">
-              This address doesn't exist in the Stacks Endowment network.
+              This path does not lead to funds of the Stacks Endowment.
             </p>
             <p className="text-sm text-muted-foreground/80 max-w-lg mx-auto font-mono">
-              Error: Unable to locate requested node in the transaction graph
+              Error: Unable to locate requested information in SIP-031.
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@ const NotFound = () => {
           <Link to="/">
             <Button variant="default" size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105">
               <Home className="h-4 w-4" />
-              Return to Network
+              Return to overview
             </Button>
           </Link>
           <Link to="/transactions">
@@ -76,7 +76,7 @@ const NotFound = () => {
         {/* Fake transaction hash */}
         <div className="pt-4 animate-in fade-in duration-700 delay-500">
           <p className="text-xs text-muted-foreground/60 font-mono">
-            TX Hash: 0x404...not...found
+            Tx Hash: 0x404...not...found
           </p>
         </div>
       </div>
