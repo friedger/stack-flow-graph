@@ -14,9 +14,10 @@ import {
 import { getDayIndexAtTime } from "@/utils/timeSeries";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 const Index = () => {
+  const { date } = useParams();
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [nodes, setNodes] = useState<NetworkNode[]>([]);
@@ -42,12 +43,41 @@ const Index = () => {
         if (orderedTransactions.length > 0) {
           const minTimestamp = groups[0];
           const maxTimestamp = groups[groups.length - 1];
+          const sortedDayGroups = Array.from(groups.values()).sort((a, b) => a - b);
+          
           setMinTime(minTimestamp);
           setMaxTime(maxTimestamp);
-          setCurrentTime(minTimestamp);
+          setDayGroups(sortedDayGroups);
 
-          setDayGroups(Array.from(groups.values()).sort((a, b) => a - b));
+          // Handle date parameter for deep linking
+          if (date) {
+            const targetDate = new Date(date);
+            const targetTimestamp = targetDate.getTime();
+            
+            if (!isNaN(targetTimestamp)) {
+              // Find the nearest day group with transactions
+              let nearestDay = minTimestamp;
+              let minDiff = Math.abs(targetTimestamp - minTimestamp);
+              
+              for (const dayTimestamp of sortedDayGroups) {
+                const diff = Math.abs(targetTimestamp - dayTimestamp);
+                if (diff < minDiff) {
+                  minDiff = diff;
+                  nearestDay = dayTimestamp;
+                }
+                // Stop if we've passed the target date
+                if (dayTimestamp > targetTimestamp) break;
+              }
+              
+              setCurrentTime(nearestDay);
+            } else {
+              setCurrentTime(minTimestamp);
+            }
+          } else {
+            setCurrentTime(minTimestamp);
+          }
         }
+
 
         setLoading(false);
       } catch (error) {
