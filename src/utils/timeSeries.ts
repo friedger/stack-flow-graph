@@ -31,10 +31,15 @@ export function getBalancesForDay(dayGroups: number[], currentDayIndex: number, 
 
 export function getNearestDayFromDate(
   dateString: string | undefined,
-  sortedDayGroups: number[],
-  minTimestamp: number,
-  maxTimestamp: number
+  sortedDayGroups: number[]
 ): number {
+  if (sortedDayGroups.length === 0) {
+    return 0;
+  }
+
+  const minTimestamp = sortedDayGroups[0];
+  const maxTimestamp = sortedDayGroups[sortedDayGroups.length - 1];
+
   if (!dateString) {
     return minTimestamp;
   }

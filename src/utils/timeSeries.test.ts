@@ -64,55 +64,58 @@ describe("getNearestDayFromDate", () => {
   const nov6_10am = new Date("2025-11-06T10:00:00Z").getTime();
   const nov10_midnight = new Date("2025-11-10T00:00:00Z").getTime();
   
-  const dayGroups = [nov4_8am, nov4_5pm, nov5_2pm, nov6_10am];
-  const minTimestamp = nov4_8am;
-  const maxTimestamp = nov10_midnight;
+  const dayGroups = [nov4_8am, nov4_5pm, nov5_2pm, nov6_10am, nov10_midnight];
 
   it("should return the first group on the exact day (morning group)", () => {
-    const result = getNearestDayFromDate("2025-11-04", dayGroups, minTimestamp, maxTimestamp);
+    const result = getNearestDayFromDate("2025-11-04", dayGroups);
     expect(result).toBe(nov4_8am);
   });
 
   it("should return the first group when multiple groups exist on same day", () => {
-    const result = getNearestDayFromDate("2025-11-04", dayGroups, minTimestamp, maxTimestamp);
+    const result = getNearestDayFromDate("2025-11-04", dayGroups);
     // Should return 8am, not 5pm (first group of the day)
     expect(result).toBe(nov4_8am);
   });
 
   it("should return the group on Nov 5th when date is Nov 5th", () => {
-    const result = getNearestDayFromDate("2025-11-05", dayGroups, minTimestamp, maxTimestamp);
+    const result = getNearestDayFromDate("2025-11-05", dayGroups);
     expect(result).toBe(nov5_2pm);
   });
 
   it("should return the target day start when no group exists but date is within range", () => {
     const nov7_start = new Date("2025-11-07T00:00:00Z").getTime();
-    const result = getNearestDayFromDate("2025-11-07", dayGroups, minTimestamp, maxTimestamp);
+    const result = getNearestDayFromDate("2025-11-07", dayGroups);
     expect(result).toBe(nov7_start);
   });
 
   it("should return minTimestamp when date is before data range", () => {
-    const result = getNearestDayFromDate("2025-11-01", dayGroups, minTimestamp, maxTimestamp);
-    expect(result).toBe(minTimestamp);
+    const result = getNearestDayFromDate("2025-11-01", dayGroups);
+    expect(result).toBe(nov4_8am);
   });
 
   it("should return minTimestamp when date is after data range", () => {
-    const result = getNearestDayFromDate("2025-11-15", dayGroups, minTimestamp, maxTimestamp);
-    expect(result).toBe(minTimestamp);
+    const result = getNearestDayFromDate("2025-11-15", dayGroups);
+    expect(result).toBe(nov4_8am);
   });
 
   it("should return minTimestamp for invalid date string", () => {
-    const result = getNearestDayFromDate("invalid-date", dayGroups, minTimestamp, maxTimestamp);
-    expect(result).toBe(minTimestamp);
+    const result = getNearestDayFromDate("invalid-date", dayGroups);
+    expect(result).toBe(nov4_8am);
   });
 
   it("should return minTimestamp for undefined date", () => {
-    const result = getNearestDayFromDate(undefined, dayGroups, minTimestamp, maxTimestamp);
-    expect(result).toBe(minTimestamp);
+    const result = getNearestDayFromDate(undefined, dayGroups);
+    expect(result).toBe(nov4_8am);
   });
 
   it("should handle date with time component (should match day only)", () => {
-    const result = getNearestDayFromDate("2025-11-04T23:59:59Z", dayGroups, minTimestamp, maxTimestamp);
+    const result = getNearestDayFromDate("2025-11-04T23:59:59Z", dayGroups);
     // Should still match Nov 4th groups
     expect(result).toBe(nov4_8am);
+  });
+
+  it("should return 0 for empty day groups", () => {
+    const result = getNearestDayFromDate("2025-11-04", []);
+    expect(result).toBe(0);
   });
 });

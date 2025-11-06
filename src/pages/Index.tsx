@@ -50,7 +50,7 @@ const Index = () => {
           setDayGroups(sortedDayGroups);
 
           // Handle date parameter for deep linking
-          const initialTime = getNearestDayFromDate(date, sortedDayGroups, minTimestamp, maxTimestamp);
+          const initialTime = getNearestDayFromDate(date, sortedDayGroups);
           setCurrentTime(initialTime);
         }
 
