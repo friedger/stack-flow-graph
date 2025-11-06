@@ -45,19 +45,26 @@ export function getNearestDayFromDate(
     return minTimestamp;
   }
 
-  // Find the nearest day group with transactions
-  let nearestDay = minTimestamp;
-  let minDiff = Math.abs(targetTimestamp - minTimestamp);
+  // Get the start and end of the target day (midnight to midnight)
+  const targetDayStart = new Date(targetDate);
+  targetDayStart.setHours(0, 0, 0, 0);
+  const targetDayEnd = new Date(targetDate);
+  targetDayEnd.setHours(23, 59, 59, 999);
 
+  const dayStart = targetDayStart.getTime();
+  const dayEnd = targetDayEnd.getTime();
+
+  // Find the first group that falls on the target day
   for (const dayTimestamp of sortedDayGroups) {
-    const diff = Math.abs(targetTimestamp - dayTimestamp);
-    if (diff < minDiff) {
-      minDiff = diff;
-      nearestDay = dayTimestamp;
+    if (dayTimestamp >= dayStart && dayTimestamp <= dayEnd) {
+      return dayTimestamp;
     }
-    // Stop if we've passed the target date
-    if (dayTimestamp > targetTimestamp) break;
+    // Stop if we've passed the target day
+    if (dayTimestamp > dayEnd) {
+      break;
+    }
   }
 
-  return nearestDay;
+  // No group found on the target day, return default
+  return minTimestamp;
 }

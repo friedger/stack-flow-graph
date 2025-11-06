@@ -1,4 +1,4 @@
-import { getDayIndexAtTime, getTransactionsForDay } from "./timeSeries";
+import { getDayIndexAtTime, getTransactionsForDay, getNearestDayFromDate } from "./timeSeries";
 import {PARSED_TRANSACTIONS, groups } from "./parseTransactions.test"
 
 describe("getDayIndexAtTime", () => {
@@ -53,5 +53,58 @@ describe("getTransactionForDay", () => {
       PARSED_TRANSACTIONS
     )
     expect (dayTransactions.map(t => t.timestamp)).toStrictEqual([1757980800003]);
+  });
+});
+
+describe("getNearestDayFromDate", () => {
+  // Nov 4th 2025 at different times
+  const nov4_5pm = new Date("2025-11-04T17:00:00Z").getTime();
+  const nov4_8am = new Date("2025-11-04T08:00:00Z").getTime();
+  const nov5_2pm = new Date("2025-11-05T14:00:00Z").getTime();
+  const nov6_10am = new Date("2025-11-06T10:00:00Z").getTime();
+  
+  const dayGroups = [nov4_8am, nov4_5pm, nov5_2pm, nov6_10am];
+  const minTimestamp = nov4_8am;
+
+  it("should return the first group on the exact day (morning group)", () => {
+    const result = getNearestDayFromDate("2025-11-04", dayGroups, minTimestamp);
+    expect(result).toBe(nov4_8am);
+  });
+
+  it("should return the first group when multiple groups exist on same day", () => {
+    const result = getNearestDayFromDate("2025-11-04", dayGroups, minTimestamp);
+    // Should return 8am, not 5pm (first group of the day)
+    expect(result).toBe(nov4_8am);
+  });
+
+  it("should return the group on Nov 5th when date is Nov 5th", () => {
+    const result = getNearestDayFromDate("2025-11-05", dayGroups, minTimestamp);
+    expect(result).toBe(nov5_2pm);
+  });
+
+  it("should return minTimestamp when no group exists on the target day", () => {
+    const result = getNearestDayFromDate("2025-11-07", dayGroups, minTimestamp);
+    expect(result).toBe(minTimestamp);
+  });
+
+  it("should return minTimestamp when date before all groups", () => {
+    const result = getNearestDayFromDate("2025-11-01", dayGroups, minTimestamp);
+    expect(result).toBe(minTimestamp);
+  });
+
+  it("should return minTimestamp for invalid date string", () => {
+    const result = getNearestDayFromDate("invalid-date", dayGroups, minTimestamp);
+    expect(result).toBe(minTimestamp);
+  });
+
+  it("should return minTimestamp for undefined date", () => {
+    const result = getNearestDayFromDate(undefined, dayGroups, minTimestamp);
+    expect(result).toBe(minTimestamp);
+  });
+
+  it("should handle date with time component (should match day only)", () => {
+    const result = getNearestDayFromDate("2025-11-04T23:59:59Z", dayGroups, minTimestamp);
+    // Should still match Nov 4th groups
+    expect(result).toBe(nov4_8am);
   });
 });
