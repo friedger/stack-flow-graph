@@ -11,7 +11,7 @@ import {
   TimeSeries,
   Transaction
 } from "@/utils/parseTransactions";
-import { getDayIndexAtTime } from "@/utils/timeSeries";
+import { getDayIndexAtTime, getNearestDayFromDate } from "@/utils/timeSeries";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -50,32 +50,8 @@ const Index = () => {
           setDayGroups(sortedDayGroups);
 
           // Handle date parameter for deep linking
-          if (date) {
-            const targetDate = new Date(date);
-            const targetTimestamp = targetDate.getTime();
-            
-            if (!isNaN(targetTimestamp)) {
-              // Find the nearest day group with transactions
-              let nearestDay = minTimestamp;
-              let minDiff = Math.abs(targetTimestamp - minTimestamp);
-              
-              for (const dayTimestamp of sortedDayGroups) {
-                const diff = Math.abs(targetTimestamp - dayTimestamp);
-                if (diff < minDiff) {
-                  minDiff = diff;
-                  nearestDay = dayTimestamp;
-                }
-                // Stop if we've passed the target date
-                if (dayTimestamp > targetTimestamp) break;
-              }
-              
-              setCurrentTime(nearestDay);
-            } else {
-              setCurrentTime(minTimestamp);
-            }
-          } else {
-            setCurrentTime(minTimestamp);
-          }
+          const initialTime = getNearestDayFromDate(date, sortedDayGroups, minTimestamp);
+          setCurrentTime(initialTime);
         }
 
 
