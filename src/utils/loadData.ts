@@ -5,6 +5,7 @@ import csv3 from "../data/transactions-SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC
 import csv4 from "../data/transactions-SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045.csv?raw";
 import csv5 from "../data/transactions-SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC.csv?raw";
 import csv6 from "../data/transactions-SPJYNB7A3SGVZMXKHYPJJ9V9WWPN986NRESMN3P9.csv?raw";
+import csv7 from "../data/transactions-SM2G1CJQQBDKW9EVYP9SVX4F7QKSRJYGEZNHNF0W5.csv?raw";
 import {
   calculateGroupBalances,
   calculateNetworkData,
@@ -38,6 +39,10 @@ export const csvFiles = [
     name: "transactions-SPJYNB7A3SGVZMXKHYPJJ9V9WWPN986NRESMN3P9.csv",
     content: csv6,
   },
+  {
+    name: "transactions-SM2G1CJQQBDKW9EVYP9SVX4F7QKSRJYGEZNHNF0W5.csv",
+    content: csv7,
+  }
 ];
 
 export const loadDataFromFiles = async () => {
