@@ -1,4 +1,5 @@
 import { DAY_IN_MILLIS, TimeSeries, Transaction } from "./parseTransactions";
+import { utcDayStart } from "./transferData";
 
 export function getDayIndexAtTime(dayGroups: number[], currentTime: number) {
   for (let i = 0; i < dayGroups.length; i++) {
@@ -51,14 +52,9 @@ export function getNearestDayFromDate(
     return minTimestamp;
   }
 
-  // Get the start and end of the target day (midnight to midnight)
-  const targetDayStart = new Date(targetDate);
-  targetDayStart.setHours(0, 0, 0, 0);
-  const targetDayEnd = new Date(targetDate);
-  targetDayEnd.setHours(23, 59, 59, 999);
-
-  const dayStart = targetDayStart.getTime();
-  const dayEnd = targetDayEnd.getTime();
+  // Day groups are UTC days, so match the target's UTC day
+  const dayStart = utcDayStart(targetTimestamp);
+  const dayEnd = dayStart + DAY_IN_MILLIS - 1;
 
   // Find the first group that falls on the target day
   for (const dayTimestamp of sortedDayGroups) {

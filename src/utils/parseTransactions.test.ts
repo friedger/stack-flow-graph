@@ -1,161 +1,140 @@
 import { describe, expect, it } from "vitest";
+import { DUST, ENDOWMENT, FIXTURE, SIP, WALLET, ZEST } from "./fixtures";
+import { loadDataFromFiles } from "./loadData";
 import {
+  calculateBalanceDeltas,
+  calculateDayGroups,
   calculateGroupBalances,
-  calculateNetworkData,
-  DAILY_REWARD,
-  START_ENDOWMENT,
-  DAY_IN_MILLIS,
-  TimeSeries,
-  Transaction
+  calculateOpeningBalances,
+  parseTransferData,
 } from "./parseTransactions";
 
-export const PARSED_TRANSACTIONS: Transaction[] = [
-  {
-    sender: "A",
-    recipient: "B",
-    amount: 100_000_000,
-    timestamp: 1757894400001,
-    date: new Date(),
-    type: "send",
-    ownerAddress: "A",
-    txId: "tx1",
-  },
-  {
-    sender: "B",
-    recipient: "SP000.sip-031",
-    amount: 50_000_000,
-    timestamp: 1757894400002,
-    date: new Date(),
-    type: "send",
-    ownerAddress: "B",
-    txId: "tx2",
-  },
-  {
-    sender: "A",
-    recipient: "SP000.sip-031",
-    amount: 30_000_000,
-    timestamp: 1757894400003 + DAY_IN_MILLIS,
-    date: new Date(),
-    type: "receive",
-    ownerAddress: "A",
-    txId: "tx3",
-  },
-];
+const day = (iso: string) => Date.parse(`${iso}T00:00:00.000Z`);
 
-const initialBalances: Map<string, number> = new Map(
-  Object.entries({ A: 130_000_000 })
-);
-
-const networkData = calculateNetworkData(PARSED_TRANSACTIONS);
-// expect(networkData.nodes).toStrictEqual([{
-//     balance: -130_000_000,
-//     id: "A",
-//     received: 0,
-//     sent: 130_000_000
-// }, {
-//     balance: 50_000_000,
-//     id: "B",
-//     received: 100_000_000,
-//     sent: 50_000_000
-// },{
-//     balance: 80_000_000,
-//     id: "C",
-//     received: 80_000_000,
-//     sent: 0
-// }]);
-
-export const timeSeriesData: TimeSeries = calculateGroupBalances(
-  PARSED_TRANSACTIONS,
-  new Set(networkData.nodes.map((n) => n.id)),
-  initialBalances
-);
-
-export const groups = Array.from(timeSeriesData.keys());
-
-describe("parseTransactions", () => {
-  it("should generate correct timeseries data", async () => {
-    // Check that balances are correct at each timestamp
-    // This is a simple check, adapt if your function returns differently
-    expect(timeSeriesData.get(groups[0])).toEqual(
-      new Map(
-        Object.entries({
-          A: 130_000_000,
-          B: 0,
-          "SP000.sip-031": 0,
-        })
-      )
-    );
-
-    expect(timeSeriesData.get(groups[1])).toEqual(
-      new Map(
-        Object.entries({
-          A: 30_000_000,
-          B: 50_000_000,
-          "SP000.sip-031": 50_000_000,
-        })
-      )
-    );
-    //             { address: "A", balance: 30_000_000, timestamp: 1757894400001 },
-    //   { address: "B", balance: 50_000_000, timestamp: 1757894400001 },
-    //   {
-    //     address: "SP000.sip-031",
-    //     balance: 50_000_000,
-    //     timestamp: 1757894400001,
-    //   },
-    //   { address: "A", balance: 0, timestamp: 1757894400003 + DAY_IN_MILLIS },
-    //   {
-    //     address: "B",
-    //     balance: 50_000_000,
-    //     timestamp: 1757894400003 + DAY_IN_MILLIS,
-    //   },
-    //   {
-    //     address: "SP000.sip-031",
-    //     balance: 80_000_000 + DAILY_REWARD,
-    //     timestamp: 1757894400003 + DAY_IN_MILLIS,
-    //   },
+describe("parseTransferData", () => {
+  it("keeps every transfer event of a multi-transfer tx", () => {
+    const txs = parseTransferData(FIXTURE);
+    expect(txs.filter((t) => t.txId === "0xb").map((t) => t.amount)).toEqual([
+      2_000_000, 3_000_000,
+    ]);
   });
 
-  it("should create correct group balance", async () => {
-    expect(groups).toStrictEqual([1757808000001, 1757894400001, 1757980800003]);
-
-    let groupBalance = timeSeriesData.get(groups[0]);
-    expect(groupBalance).toStrictEqual(
-      new Map(Object.entries({ A: 130_000_000, B: 0, "SP000.sip-031": 0 }))
-    );
-
-    groupBalance = timeSeriesData.get(groups[1]);
-    expect(groupBalance).toStrictEqual(
-      new Map(Object.entries({ A: 30_000_000, B: 50_000_000, "SP000.sip-031": 50_000_000 }))
-    );
+  it("marks the tracked side as owner", () => {
+    const txs = parseTransferData(FIXTURE);
+    const dust = txs.find((t) => t.sender === DUST);
+    expect(dust.ownerAddress).toBe(WALLET);
+    expect(dust.type).toBe("receive");
   });
 });
 
-describe("sip-031 daily rewards", () => {
-  const SIP = "SP000000000000000000002Q6VF78.sip-031";
-  const atDay = (d: number) => START_ENDOWMENT + d * DAY_IN_MILLIS + 1;
-  const txs: Transaction[] = [10, 20, 30].map((d) => ({
-    sender: "A",
-    recipient: "B",
-    amount: 1_000_000,
-    timestamp: atDay(d),
-    date: new Date(atDay(d)),
-    type: "send",
-    ownerAddress: "A",
-    txId: `tx-day-${d}`,
-  }));
+describe("calculateOpeningBalances", () => {
+  it("derives the start balance from the chain balance and all events", () => {
+    const txs = parseTransferData(FIXTURE);
+    const opening = calculateOpeningBalances(
+      FIXTURE,
+      calculateBalanceDeltas(txs, FIXTURE.supply)
+    );
+    expect(Object.fromEntries(opening)).toEqual({
+      [SIP]: 200_000_000_000_000,
+      [ENDOWMENT]: -3000, // fees are not events
+      [WALLET]: 1_000_000_000_000,
+    });
+  });
+});
 
-  it("adds each day's reward once instead of compounding it", () => {
-    const series = calculateGroupBalances(
-      txs,
-      new Set([SIP, "A", "B"]),
-      new Map([[SIP, 200_000_000], ["A", 3_000_000]])
+describe("calculateDayGroups", () => {
+  it("uses UTC days with displayed transactions plus a starting day", async () => {
+    const { groups } = await loadDataFromFiles(FIXTURE);
+    expect(groups).toEqual([
+      day("2025-07-31"),
+      day("2025-08-01"),
+      day("2025-08-02"),
+      day("2025-08-04"),
+    ]);
+  });
+
+  it("returns no groups without transactions", () => {
+    expect(calculateDayGroups([])).toEqual([]);
+  });
+});
+
+describe("calculateGroupBalances", () => {
+  it("adds each mint once, without compounding", () => {
+    const groups = [day("2025-08-01"), day("2025-08-02"), day("2025-08-03")];
+    const deltas = [1, 2, 3].map((d) => ({
+      timestamp: day(`2025-08-0${d}`) + 1000,
+      address: SIP,
+      delta: 70_000_000_000,
+    }));
+    const series = calculateGroupBalances(groups, deltas, new Set([SIP]));
+    expect(groups.map((g) => series.get(g).get(SIP))).toEqual([
+      70_000, 140_000, 210_000,
+    ]);
+  });
+
+  it("reconstructs balances that end at the chain balance", async () => {
+    const { groups, timeSeries, nodeAddresses } = await loadDataFromFiles(FIXTURE);
+    expect(Array.from(nodeAddresses).sort()).toEqual(
+      [SIP, ENDOWMENT, WALLET, ZEST].sort()
     );
-    const sipBalances = Array.from(series.values()).map((b) => b.get(SIP));
-    expect(sipBalances).toEqual(
-      [9, 10, 20, 30].map((days) => 200_000_000 + days * DAILY_REWARD)
-    );
-    // Rewards must not leak into other addresses or later transfers
-    expect(series.get(atDay(30))!.get("A")).toBe(0);
-    expect(series.get(atDay(30))!.get("B")).toBe(3_000_000);
+    const at = (g: number) => Object.fromEntries(timeSeries.get(g));
+    expect(at(groups[0])).toEqual({
+      [SIP]: 200_140_000,
+      [ENDOWMENT]: -0.003,
+      [WALLET]: 1_000_000,
+      [ZEST]: 0,
+    });
+    expect(at(groups[1])).toEqual({
+      [SIP]: 100_210_000,
+      [ENDOWMENT]: 99_999_999.997,
+      [WALLET]: 1_000_000,
+      [ZEST]: 0,
+    });
+    expect(at(groups[2])).toEqual({
+      [SIP]: 100_350_000,
+      [ENDOWMENT]: 94_999_999.997,
+      [WALLET]: 6_000_000.0001,
+      [ZEST]: 0,
+    });
+    expect(at(groups[3])).toEqual({
+      [SIP]: 100_420_000,
+      [ENDOWMENT]: 94_999_999.997,
+      [WALLET]: 4_500_000.0001,
+      [ZEST]: 1_500_000,
+    });
+  });
+});
+
+describe("loadDataFromFiles", () => {
+  it("hides dust from transaction lists", async () => {
+    const { orderedTransactions } = await loadDataFromFiles(FIXTURE);
+    expect(orderedTransactions.map((t) => t.id)).toEqual([
+      "0xa:0",
+      "0xb:0",
+      "0xb:1",
+      "0xd:0",
+    ]);
+  });
+
+  it("summarises addresses so each tracked row reconciles", async () => {
+    const { addressSummaries, networkData } = await loadDataFromFiles(FIXTURE);
+    for (const node of networkData.nodes) {
+      const s = addressSummaries.get(node.id);
+      if (!s.tracked) continue;
+      expect(s.opening + s.minted - s.burned + node.received - node.sent).toBeCloseTo(
+        s.finalBalance,
+        6
+      );
+    }
+    expect(addressSummaries.get(SIP)).toMatchObject({
+      opening: 200_000_000,
+      minted: 420_000,
+      finalBalance: 100_420_000,
+      tracked: true,
+    });
+    expect(addressSummaries.get(ZEST)).toMatchObject({
+      finalBalance: 1_500_000,
+      tracked: false,
+    });
   });
 });

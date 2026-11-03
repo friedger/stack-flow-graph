@@ -23,6 +23,7 @@ const Index = () => {
   const [nodes, setNodes] = useState<NetworkNode[]>([]);
   const [links, setLinks] = useState<NetworkLink[]>([]);
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeries>(new Map());
+  const [openingBalances, setOpeningBalances] = useState<Map<string, number>>(new Map());
   const [minTime, setMinTime] = useState(0);
   const [maxTime, setMaxTime] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -33,8 +34,9 @@ const Index = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { orderedTransactions, networkData, timeSeries, groups } =
+        const { orderedTransactions, networkData, timeSeries, groups, openingBalances } =
           await loadDataFromFiles();
+        setOpeningBalances(openingBalances);
         setTransactions(orderedTransactions);
         setNodes(networkData.nodes);
         setLinks(networkData.links);
@@ -62,7 +64,7 @@ const Index = () => {
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
   // Detect day changes during auto-play or manual navigation
@@ -207,6 +209,7 @@ const Index = () => {
           currentTimestamp={currentTime}
           dayGroups={dayGroups}
           timeSeriesData={timeSeriesData}
+          openingBalances={openingBalances}
         />
 
         {/* Network Graph */}

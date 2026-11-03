@@ -1,70 +1,70 @@
-// Import CSV files
-import csv1 from "../data/transactions-SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES.csv?raw";
-import csv2 from "../data/transactions-SP30742YR27SYJF29W9GRS7PT2PNECBKKBQP2GHNC.csv?raw";
-import csv3 from "../data/transactions-SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC.csv?raw";
-import csv4 from "../data/transactions-SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045.csv?raw";
-import csv5 from "../data/transactions-SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC.csv?raw";
-import csv6 from "../data/transactions-SPJYNB7A3SGVZMXKHYPJJ9V9WWPN986NRESMN3P9.csv?raw";
-import csv7 from "../data/transactions-SM2G1CJQQBDKW9EVYP9SVX4F7QKSRJYGEZNHNF0W5.csv?raw";
+import transferDataJson from "../data/transfers.json";
 import {
+  calculateBalanceDeltas,
+  calculateDayGroups,
   calculateGroupBalances,
   calculateNetworkData,
-  isSIP031Address,
-  parseTransactionData,
-  TimeSeriesBalance,
+  calculateOpeningBalances,
+  parseTransferData,
+  shouldIncludeTransaction,
 } from "./parseTransactions";
+import { MICRO_STX_PER_STX, TransferData, toMicro } from "./transferData";
 
-export const csvFiles = [
-  {
-    name: "transactions-SP1BJGDG8MSM64DMH33A0F1NB0DT40YGBPSW00NES.csv",
-    content: csv1,
-  },
-  {
-    name: "transactions-SP30742YR27SYJF29W9GRS7PT2PNECBKKBQP2GHNC.csv",
-    content: csv2,
-  },
-  {
-    name: "transactions-SP26E434SDGRSA9QF5D65A3WZ29Y0MXD9AMXFJYDC.csv",
-    content: csv3,
-  },
-  {
-    name: "transactions-SM1Z6BP8PDKYKXTZXXSKXFEY6NQ7RAM7DAEAYR045.csv",
-    content: csv4,
-  },
-  {
-    name: "transactions-SM30W6WZKNRJKTPVN09J7D8T2R989ZM25VBG2GHNC.csv",
-    content: csv5,
-  },
-  {
-    name: "transactions-SPJYNB7A3SGVZMXKHYPJJ9V9WWPN986NRESMN3P9.csv",
-    content: csv6,
-  },
-  {
-    name: "transactions-SM2G1CJQQBDKW9EVYP9SVX4F7QKSRJYGEZNHNF0W5.csv",
-    content: csv7,
-  }
-];
+export const transferData = transferDataJson as TransferData;
 
-export const loadDataFromFiles = async () => {
-  const orderedTransactions = await parseTransactionData(csvFiles);
-  const networkData = calculateNetworkData(orderedTransactions);
+export interface AddressSummary {
+  /** STX balance at the start of the data window (tracked addresses only) */
+  opening: number;
+  minted: number;
+  burned: number;
+  /** On-chain balance for tracked addresses, net flow for the others */
+  finalBalance: number;
+  tracked: boolean;
+}
 
+export const computeData = (data: TransferData = transferData) => {
+  const allTransactions = parseTransferData(data);
+  // Dust transfers are hidden in lists and the graph, but still count for balances.
+  const orderedTransactions = allTransactions.filter((t) =>
+    shouldIncludeTransaction(t.amount)
+  );
+  const networkData = calculateNetworkData(allTransactions);
   const nodeAddresses = new Set(networkData.nodes.map((n) => n.id));
 
-  // Set initial balance for SP000...sip-031 contract (200m STX)
-  const initialBalances: Map<string, number> = new Map();
-  const sip031Address = networkData.nodes.find((n) => isSIP031Address(n.id)).id;
-  if (sip031Address) {
-    initialBalances.set(sip031Address, 200_000_000);
-  }
-
+  const deltas = calculateBalanceDeltas(allTransactions, data.supply);
+  const openingMicro = calculateOpeningBalances(data, deltas);
+  const groups = calculateDayGroups(orderedTransactions);
   const timeSeries = calculateGroupBalances(
-    orderedTransactions,
+    groups,
+    deltas,
     nodeAddresses,
-    initialBalances
+    openingMicro
   );
 
-  const groups = Array.from(timeSeries.keys());
+  const tracked = new Set(data.tracked);
+  const openingBalances = new Map<string, number>();
+  openingMicro.forEach((micro, addr) =>
+    openingBalances.set(addr, micro / MICRO_STX_PER_STX)
+  );
+
+  const addressSummaries = new Map<string, AddressSummary>();
+  networkData.nodes.forEach((node) => {
+    const supply = data.supply.filter((s) => s.address === node.id);
+    const sum = (kind: "mint" | "burn") =>
+      supply
+        .filter((s) => s.kind === kind)
+        .reduce((acc, s) => acc + toMicro(s.amount), 0) / MICRO_STX_PER_STX;
+    const isTracked = tracked.has(node.id) && data.balances[node.id] !== undefined;
+    addressSummaries.set(node.id, {
+      opening: openingBalances.get(node.id) || 0,
+      minted: sum("mint"),
+      burned: sum("burn"),
+      finalBalance: isTracked
+        ? toMicro(data.balances[node.id]) / MICRO_STX_PER_STX
+        : node.balance,
+      tracked: isTracked,
+    });
+  });
 
   return {
     timeSeries,
@@ -72,5 +72,13 @@ export const loadDataFromFiles = async () => {
     orderedTransactions,
     networkData,
     groups,
+    openingBalances,
+    addressSummaries,
+    dataHeight: data.height,
+    generatedAt: data.generatedAt,
   };
 };
+
+/** Async for callers that may later load the data over the network. */
+export const loadDataFromFiles = (data: TransferData = transferData) =>
+  Promise.resolve(computeData(data));
