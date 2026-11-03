@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   calculateGroupBalances,
   calculateNetworkData,
+  DAILY_REWARD,
+  START_ENDOWMENT,
   DAY_IN_MILLIS,
   TimeSeries,
   Transaction
@@ -125,5 +127,35 @@ describe("parseTransactions", () => {
     expect(groupBalance).toStrictEqual(
       new Map(Object.entries({ A: 30_000_000, B: 50_000_000, "SP000.sip-031": 50_000_000 }))
     );
+  });
+});
+
+describe("sip-031 daily rewards", () => {
+  const SIP = "SP000000000000000000002Q6VF78.sip-031";
+  const atDay = (d: number) => START_ENDOWMENT + d * DAY_IN_MILLIS + 1;
+  const txs: Transaction[] = [10, 20, 30].map((d) => ({
+    sender: "A",
+    recipient: "B",
+    amount: 1_000_000,
+    timestamp: atDay(d),
+    date: new Date(atDay(d)),
+    type: "send",
+    ownerAddress: "A",
+    txId: `tx-day-${d}`,
+  }));
+
+  it("adds each day's reward once instead of compounding it", () => {
+    const series = calculateGroupBalances(
+      txs,
+      new Set([SIP, "A", "B"]),
+      new Map([[SIP, 200_000_000], ["A", 3_000_000]])
+    );
+    const sipBalances = Array.from(series.values()).map((b) => b.get(SIP));
+    expect(sipBalances).toEqual(
+      [9, 10, 20, 30].map((days) => 200_000_000 + days * DAILY_REWARD)
+    );
+    // Rewards must not leak into other addresses or later transfers
+    expect(series.get(atDay(30))!.get("A")).toBe(0);
+    expect(series.get(atDay(30))!.get("B")).toBe(3_000_000);
   });
 });

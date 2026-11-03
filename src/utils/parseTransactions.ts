@@ -247,21 +247,21 @@ function saveSnapshot(
   previousTimestamp: number,
   timeSeriesData: TimeSeries
 ) {
+  // The running balances only contain transfers. The rewards minted to the
+  // sip-031 contract so far are added to the snapshot only: adding them to
+  // the running balances would carry them into every later snapshot, which
+  // adds its own cumulative reward again.
+  const snapshot = new Map<string, number>();
   nodeAddresses.forEach((addr) => {
     let balance = balances.get(addr) || 0;
-
-    // Add daily rewards for sip-031 contract
-    // only add dailyRewards for the first tx of the day
     if (addr === SIP_031_ADDRESS && previousTimestamp > START_ENDOWMENT) {
       const daysSinceStart = Math.floor(
         (previousTimestamp - START_ENDOWMENT) / DAY_IN_MILLIS
       );
       balance += daysSinceStart * DAILY_REWARD;
     }
-    balances.set(addr, balance);
+    snapshot.set(addr, balance);
   });
-  // Save snapshot
-  timeSeriesData.set(previousTimestamp, balances);
-  balances = new Map(balances.entries());
+  timeSeriesData.set(previousTimestamp, snapshot);
   return { balances };
 }
