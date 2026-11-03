@@ -28,7 +28,7 @@ const TransactionsPage = () => {
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
   const getExplorerTxUrl = (txId: string) => {

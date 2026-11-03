@@ -10,7 +10,7 @@ const NotFound = () => {
       
       {/* Animated floating network nodes */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(8)].map((_, i) => (
+        {Array.from({ length: 8 }, (_, i) => (
           <div
             key={i}
             className="absolute rounded-full bg-primary/20 animate-pulse"

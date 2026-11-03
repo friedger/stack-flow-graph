@@ -27,7 +27,7 @@ export const Footer = () => {
         console.error("Error loading footer stats:", error);
       }
     };
-    loadStats();
+    void loadStats();
   }, []);
 
   return (
