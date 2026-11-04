@@ -1,6 +1,6 @@
 /**
  * Fetches the STX history of the tracked addresses from Secondlayer and
- * writes src/data/transfers.json.
+ * writes public/data/transfers.json.
  *
  *   SECONDLAYER_API_KEY=sk-sl_... npm run data:update
  *
@@ -18,6 +18,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  DATA_VERSION,
   discoverRecipients,
   hasValidBlockTime,
   interpolateBlockTime,
@@ -35,7 +36,7 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CONFIG_PATH = resolve(ROOT, "scripts/tracking.config.json");
-const DATA_PATH = resolve(ROOT, "src/data/transfers.json");
+const DATA_PATH = resolve(ROOT, "public/data/transfers.json");
 const REORG_MARGIN = 100;
 const PAGE_LIMIT = 1000;
 /** Max distance in blocks between exact time lookups when interpolating mint times. */
@@ -196,8 +197,8 @@ async function fetchEvents(
 
 function toTransfer(e: IndexEvent): TransferEvent {
   return {
-    id: `${e.tx_id}:${e.event_index}`,
     txId: e.tx_id,
+    index: e.event_index,
     height: e.block_height,
     time: e.block_time,
     sender: e.sender!,
@@ -258,7 +259,7 @@ async function repairBlockTimes(events: IndexEvent[], exact: boolean) {
 
 function emptyData(config: Config): TransferData {
   return {
-    version: 1,
+    version: DATA_VERSION,
     generatedAt: "",
     height: 0,
     startTime: config.startTime,
@@ -290,8 +291,8 @@ async function main() {
   const previous: TransferData = existsSync(DATA_PATH)
     ? (JSON.parse(readFileSync(DATA_PATH, "utf8")) as TransferData)
     : emptyData(config);
-  if (previous.startTime !== config.startTime) {
-    console.log("startTime changed, refetching everything");
+  if (previous.version !== DATA_VERSION || previous.startTime !== config.startTime) {
+    console.log("data format or startTime changed, refetching everything");
     previous.transfers = [];
     previous.supply = [];
     previous.cursors = {};
@@ -398,7 +399,7 @@ async function main() {
   }
 
   const data: TransferData = {
-    version: 1,
+    version: DATA_VERSION,
     generatedAt: new Date().toISOString(),
     height,
     startTime: config.startTime,

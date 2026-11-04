@@ -3,6 +3,7 @@ import {
   MICRO_STX_PER_STX,
   TransferData,
   TransferEvent,
+  eventId,
   toMicro,
   utcDayStart,
 } from "./transferData";
@@ -68,7 +69,7 @@ export function toTransaction(
   const amountMicro = toMicro(event.amount);
   const senderTracked = tracked.has(event.sender);
   return {
-    id: event.id,
+    id: eventId(event),
     date: new Date(timestamp),
     timestamp,
     sender: event.sender,

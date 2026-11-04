@@ -8,11 +8,12 @@ import {
   mergeTransfers,
   supplyResumeHeight,
   TransferEvent,
+  eventId,
 } from "./transferData";
 
 const ev = (id: string, height: number, sender: string, recipient: string, amount = "1"): TransferEvent => ({
-  id,
   txId: id.split(":")[0],
+  index: Number(id.split(":")[1]),
   height,
   time: "2025-08-01T00:00:00.000Z",
   sender,
@@ -26,7 +27,7 @@ describe("mergeTransfers", () => {
     // 0x2 was reorged away; 0x4 has two transfers
     const fetched = [ev("0x4:0", 55, "A", "B"), ev("0x4:1", 55, "A", "C")];
     const merged = mergeTransfers(stored, fetched, "transfer-out", "A", 40);
-    expect(merged.map((e) => e.id)).toEqual(["0x1:0", "0x4:0", "0x4:1", "0x3:0"]);
+    expect(merged.map(eventId)).toEqual(["0x1:0", "0x4:0", "0x4:1", "0x3:0"]);
   });
 });
 

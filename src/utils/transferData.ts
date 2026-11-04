@@ -1,5 +1,5 @@
 /**
- * Shape of src/data/transfers.json and the pure helpers used both by the
+ * Shape of public/data/transfers.json and the pure helpers used both by the
  * Secondlayer fetch script (scripts/fetch-transfers.ts) and by the app.
  *
  * This module must not import anything: Node runs the fetch script with
@@ -12,10 +12,10 @@
 export const MICRO_STX_PER_STX = 1_000_000;
 export const DAY_IN_MILLIS = 24 * 60 * 60 * 1000;
 
-/** One stx_transfer event. `id` is unique per event, not per transaction. */
+/** One stx_transfer event; see `eventId` for its unique key. */
 export interface TransferEvent {
-  id: string; // `${txId}:${eventIndex}`
   txId: string;
+  index: number; // event index within the transaction
   height: number;
   time: string; // ISO 8601 block time
   sender: string;
@@ -35,7 +35,7 @@ export interface SupplyChange {
 }
 
 export interface TransferData {
-  version: 1;
+  version: 2;
   generatedAt: string;
   /** Every event and balance in this file is as of this Stacks block height. */
   height: number;
@@ -51,6 +51,13 @@ export interface TransferData {
   supply: SupplyChange[];
   /** Highest fully processed block height per Secondlayer query key. */
   cursors: Record<string, number>;
+}
+
+export const DATA_VERSION = 2;
+
+/** Unique per event, not per transaction: `${txId}:${index}`. */
+export function eventId(e: Pick<TransferEvent, "txId" | "index">): string {
+  return `${e.txId}:${e.index}`;
 }
 
 export type QueryKind = "transfer-out" | "transfer-in" | "mint" | "burn";
@@ -95,10 +102,10 @@ export function mergeTransfers(
   const kept = stored.filter(
     (e) => !(e[side] === address && e.height >= fromHeight)
   );
-  const byId = new Map(kept.map((e) => [e.id, e]));
-  for (const e of fetched) byId.set(e.id, e);
+  const byId = new Map(kept.map((e) => [eventId(e), e]));
+  for (const e of fetched) byId.set(eventId(e), e);
   return Array.from(byId.values()).sort(
-    (a, b) => a.height - b.height || a.id.localeCompare(b.id)
+    (a, b) => a.height - b.height || a.txId.localeCompare(b.txId) || a.index - b.index
   );
 }
 

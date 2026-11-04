@@ -17,7 +17,7 @@ const STX = (n: number) => String(n * 1_000_000);
  * SIP-031 receives 70k STX of mints per day.
  */
 export const FIXTURE: TransferData = {
-  version: 1,
+  version: 2,
   generatedAt: "2025-08-05T00:00:00.000Z",
   height: 1000,
   startTime: "2025-07-30T00:27:51.000Z",
@@ -33,8 +33,8 @@ export const FIXTURE: TransferData = {
   },
   transfers: [
     {
-      id: "0xa:0",
       txId: "0xa",
+      index: 0,
       height: 10,
       time: "2025-08-01T10:00:00.000Z",
       sender: SIP,
@@ -42,8 +42,8 @@ export const FIXTURE: TransferData = {
       amount: STX(100_000_000),
     },
     {
-      id: "0xb:0",
       txId: "0xb",
+      index: 0,
       height: 20,
       time: "2025-08-02T12:00:00.000Z",
       sender: ENDOWMENT,
@@ -51,8 +51,8 @@ export const FIXTURE: TransferData = {
       amount: STX(2_000_000),
     },
     {
-      id: "0xb:1",
       txId: "0xb",
+      index: 1,
       height: 20,
       time: "2025-08-02T12:00:00.000Z",
       sender: ENDOWMENT,
@@ -60,8 +60,8 @@ export const FIXTURE: TransferData = {
       amount: STX(3_000_000),
     },
     {
-      id: "0xc:0",
       txId: "0xc",
+      index: 0,
       height: 21,
       time: "2025-08-02T13:00:00.000Z",
       sender: DUST,
@@ -69,8 +69,8 @@ export const FIXTURE: TransferData = {
       amount: "100",
     },
     {
-      id: "0xd:0",
       txId: "0xd",
+      index: 0,
       height: 40,
       time: "2025-08-04T09:00:00.000Z",
       sender: WALLET,

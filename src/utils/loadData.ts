@@ -1,4 +1,3 @@
-import transferDataJson from "../data/transfers.json";
 import {
   calculateBalanceDeltas,
   calculateDayGroups,
@@ -8,9 +7,10 @@ import {
   parseTransferData,
   shouldIncludeTransaction,
 } from "./parseTransactions";
-import { MICRO_STX_PER_STX, TransferData, toMicro } from "./transferData";
+import { DATA_VERSION, MICRO_STX_PER_STX, TransferData, toMicro } from "./transferData";
 
-export const transferData = transferDataJson as TransferData;
+/** Written by scripts/fetch-transfers.ts, served from public/. */
+export const DATA_URL = "/data/transfers.json";
 
 export interface AddressSummary {
   /** STX balance at the start of the data window (tracked addresses only) */
@@ -22,7 +22,7 @@ export interface AddressSummary {
   tracked: boolean;
 }
 
-export const computeData = (data: TransferData = transferData) => {
+export const computeData = (data: TransferData) => {
   const allTransactions = parseTransferData(data);
   // Dust transfers are hidden in lists and the graph, but still count for balances.
   const orderedTransactions = allTransactions.filter((t) =>
@@ -79,6 +79,28 @@ export const computeData = (data: TransferData = transferData) => {
   };
 };
 
-/** Async for callers that may later load the data over the network. */
-export const loadDataFromFiles = (data: TransferData = transferData) =>
-  Promise.resolve(computeData(data));
+export type ComputedData = ReturnType<typeof computeData>;
+
+export async function fetchTransferData(url = DATA_URL): Promise<TransferData> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Loading ${url} failed: HTTP ${res.status}`);
+  const data = (await res.json()) as TransferData;
+  if (data.version !== DATA_VERSION) {
+    throw new Error(`Unsupported data version ${String(data.version)} in ${url}`);
+  }
+  return data;
+}
+
+let cached: Promise<ComputedData> | undefined;
+
+/**
+ * The computed data of `data`, or of the published data file. The file is
+ * fetched and processed once and shared by every page; a failed load is
+ * retried on the next call.
+ */
+export function loadDataFromFiles(data?: TransferData): Promise<ComputedData> {
+  if (data) return Promise.resolve(computeData(data));
+  cached ??= fetchTransferData().then(computeData);
+  cached.catch(() => (cached = undefined));
+  return cached;
+}
