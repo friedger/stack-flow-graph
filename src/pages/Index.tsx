@@ -13,7 +13,7 @@ import {
 } from "@/utils/parseTransactions";
 import { getDayIndexAtTime, getNearestDayFromDate } from "@/utils/timeSeries";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 const Index = () => {
@@ -29,7 +29,6 @@ const Index = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dayGroups, setDayGroups] = useState<number[]>([]);
-  const [dayChangeTrigger, setDayChangeTrigger] = useState(0); // Trigger for day changes (manual or auto)
 
   useEffect(() => {
     const loadData = async () => {
@@ -67,14 +66,11 @@ const Index = () => {
     void loadData();
   }, []);
 
-  // Detect day changes during auto-play or manual navigation
-  useEffect(() => {
-    // Only update dayChangeTrigger if currentTime moves to a new day group
-    const currentDayIndex = getDayIndexAtTime(dayGroups, currentTime);
-    if (currentDayIndex !== -1 && currentDayIndex !== dayChangeTrigger) {
-      setDayChangeTrigger(currentDayIndex);
-    }
-  }, [currentTime, dayGroups]);
+  // Index of the day group at currentTime; changes on auto-play and manual navigation
+  const dayChangeTrigger = useMemo(
+    () => Math.max(0, getDayIndexAtTime(dayGroups, currentTime)),
+    [currentTime, dayGroups]
+  );
 
   useEffect(() => {
     if (!isPlaying || dayGroups.length === 0) return;

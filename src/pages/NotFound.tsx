@@ -2,6 +2,16 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, Network, ArrowLeft } from "lucide-react";
 
+// Random once per page load, so re-renders do not move the nodes.
+const FLOATING_NODES = Array.from({ length: 8 }, (_, i) => ({
+  width: `${Math.random() * 40 + 20}px`,
+  height: `${Math.random() * 40 + 20}px`,
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  animationDelay: `${i * 0.3}s`,
+  animationDuration: `${Math.random() * 3 + 2}s`,
+}));
+
 const NotFound = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
@@ -10,18 +20,11 @@ const NotFound = () => {
       
       {/* Animated floating network nodes */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {Array.from({ length: 8 }, (_, i) => (
+        {FLOATING_NODES.map((style, i) => (
           <div
             key={i}
             className="absolute rounded-full bg-primary/20 animate-pulse"
-            style={{
-              width: `${Math.random() * 40 + 20}px`,
-              height: `${Math.random() * 40 + 20}px`,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${i * 0.3}s`,
-              animationDuration: `${Math.random() * 3 + 2}s`,
-            }}
+            style={style}
           />
         ))}
       </div>
