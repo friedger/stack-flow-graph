@@ -16,7 +16,7 @@ const NotFound = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background gradient effect */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-accent/5 pointer-events-none" />
       
       {/* Animated floating network nodes */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -41,10 +41,10 @@ const NotFound = () => {
         </div>
 
         <div className="space-y-4">
-          <h1 className="text-9xl md:text-[12rem] font-bold bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-9xl md:text-[12rem] font-bold bg-linear-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent animate-in fade-in slide-in-from-bottom-4 duration-700">
             404
           </h1>
-          <div className="h-1 w-24 mx-auto bg-gradient-to-r from-primary to-accent rounded-full animate-in fade-in duration-700 delay-100" />
+          <div className="h-1 w-24 mx-auto bg-linear-to-r from-primary to-accent rounded-full animate-in fade-in duration-700 delay-100" />
         </div>
         
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150">

@@ -63,7 +63,7 @@ const TransactionsPage = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-linear-to-r from-primary to-primary-glow bg-clip-text text-transparent">
               All Transactions
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
