@@ -5,7 +5,7 @@ import { loadDataFromFiles } from "@/utils/loadData";
 import { Transaction } from "@/utils/parseTransactions";
 import { formatDate, formatAmount } from "@/utils/formatters";
 import { AddressLink } from "@/components/AddressLink";
-import { Loader2, ArrowLeft, ExternalLink } from "lucide-react";
+import { LoaderCircle, ArrowLeft, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ const TransactionsPage = () => {
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
   const getExplorerTxUrl = (txId: string) => {
@@ -39,7 +39,7 @@ const TransactionsPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-lg text-muted-foreground">Loading transactions...</p>
         </div>
       </div>
@@ -63,7 +63,7 @@ const TransactionsPage = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-linear-to-r from-primary to-primary-glow bg-clip-text text-transparent">
               All Transactions
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">

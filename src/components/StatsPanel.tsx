@@ -9,6 +9,8 @@ interface StatsPanelProps {
   currentTimestamp: number;
   dayGroups: number[];
   timeSeriesData: Map<number, Map<string, number>>;
+  /** Balances held before the endowment started; not counted as SIP-031 STX */
+  openingBalances?: Map<string, number>;
 }
 
 export function StatsPanel({
@@ -17,6 +19,7 @@ export function StatsPanel({
   currentTimestamp,
   dayGroups,
   timeSeriesData,
+  openingBalances,
 }: StatsPanelProps) {
   // Calculate total STX balance excluding SIP-031 address
   const totalSTXBalance = useMemo(() => {
@@ -28,16 +31,16 @@ export function StatsPanel({
       }
     }
     const balancesAtTime: Map<string, number> =
-      timeSeriesData.get(dayGroups[index]) || new Map();
+      timeSeriesData.get(dayGroups[index]) || new Map<string, number>();
     let total = 0;
     balancesAtTime.forEach((balance, addr) => {
       if (isSIP031Address(addr)) {
         return;
       }
-      total += balance;
+      total += balance - (openingBalances?.get(addr) || 0);
     });
     return total / 1000000; // Convert to millions of STX
-  }, [currentTimestamp, dayGroups, timeSeriesData]);
+  }, [currentTimestamp, dayGroups, timeSeriesData, openingBalances]);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">

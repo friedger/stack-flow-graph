@@ -12,8 +12,8 @@ import {
   Transaction
 } from "@/utils/parseTransactions";
 import { getDayIndexAtTime, getNearestDayFromDate } from "@/utils/timeSeries";
-import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { LoaderCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 const Index = () => {
@@ -23,18 +23,19 @@ const Index = () => {
   const [nodes, setNodes] = useState<NetworkNode[]>([]);
   const [links, setLinks] = useState<NetworkLink[]>([]);
   const [timeSeriesData, setTimeSeriesData] = useState<TimeSeries>(new Map());
+  const [openingBalances, setOpeningBalances] = useState<Map<string, number>>(new Map());
   const [minTime, setMinTime] = useState(0);
   const [maxTime, setMaxTime] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dayGroups, setDayGroups] = useState<number[]>([]);
-  const [dayChangeTrigger, setDayChangeTrigger] = useState(0); // Trigger for day changes (manual or auto)
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const { orderedTransactions, networkData, timeSeries, groups } =
+        const { orderedTransactions, networkData, timeSeries, groups, openingBalances } =
           await loadDataFromFiles();
+        setOpeningBalances(openingBalances);
         setTransactions(orderedTransactions);
         setNodes(networkData.nodes);
         setLinks(networkData.links);
@@ -62,17 +63,14 @@ const Index = () => {
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
-  // Detect day changes during auto-play or manual navigation
-  useEffect(() => {
-    // Only update dayChangeTrigger if currentTime moves to a new day group
-    const currentDayIndex = getDayIndexAtTime(dayGroups, currentTime);
-    if (currentDayIndex !== -1 && currentDayIndex !== dayChangeTrigger) {
-      setDayChangeTrigger(currentDayIndex);
-    }
-  }, [currentTime, dayGroups]);
+  // Index of the day group at currentTime; changes on auto-play and manual navigation
+  const dayChangeTrigger = useMemo(
+    () => Math.max(0, getDayIndexAtTime(dayGroups, currentTime)),
+    [currentTime, dayGroups]
+  );
 
   useEffect(() => {
     if (!isPlaying || dayGroups.length === 0) return;
@@ -159,7 +157,7 @@ const Index = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-lg text-muted-foreground">
             Loading transaction data...
           </p>
@@ -180,7 +178,7 @@ const Index = () => {
       <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
         {/* Header */}
         <div className="text-center space-y-3 md:space-y-4">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-linear-to-r from-primary to-primary-glow bg-clip-text text-transparent">
             Stacks Endowment (SIP-031)
           </h1>
           <p className="text-muted-foreground text-sm sm:text-base md:text-lg px-4">
@@ -207,6 +205,7 @@ const Index = () => {
           currentTimestamp={currentTime}
           dayGroups={dayGroups}
           timeSeriesData={timeSeriesData}
+          openingBalances={openingBalances}
         />
 
         {/* Network Graph */}

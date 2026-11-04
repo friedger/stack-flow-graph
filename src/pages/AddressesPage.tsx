@@ -9,62 +9,35 @@ import {
 } from "@/components/ui/table";
 import { SEO } from "@/components/SEO";
 import { loadDataFromFiles } from "@/utils/loadData";
-import {
-  NetworkNode,
-  isSIP031Address,
-  DAILY_REWARD,
-  START_ENDOWMENT,
-  DAY_IN_MILLIS,
-} from "@/utils/parseTransactions";
+import { NetworkNode } from "@/utils/parseTransactions";
+import { AddressSummary } from "@/utils/loadData";
 import { formatAmount } from "@/utils/formatters";
 import { AddressLink } from "@/components/AddressLink";
 import { getAddressComment } from "@/data/addressComments";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { LoaderCircle, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-type AddressData = NetworkNode & { minted: number; finalBalance: number };
+type AddressData = NetworkNode & AddressSummary;
 
 const AddressesPage = () => {
   const [loading, setLoading] = useState(true);
   const [addressData, setAddressData] = useState<AddressData[]>([]);
-  const [dailyRewardsMinted, setDailyRewardsMinted] = useState(0);
+  const [dataHeight, setDataHeight] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const {
           networkData: { nodes },
-          orderedTransactions,
+          addressSummaries,
+          dataHeight,
         } = await loadDataFromFiles();
-
-        // Calculate the last transaction date and daily rewards
-        const lastTxDate =
-          orderedTransactions.length > 0
-            ? orderedTransactions[orderedTransactions.length - 1].timestamp
-            : Date.now();
-
-        const daysSinceStart = Math.floor(
-          (lastTxDate - START_ENDOWMENT) / DAY_IN_MILLIS
+        setDataHeight(dataHeight);
+        setAddressData(
+          nodes.map((node) => ({ ...node, ...addressSummaries.get(node.id) }))
         );
-        const totalDailyRewards = daysSinceStart * DAILY_REWARD;
-        setDailyRewardsMinted(totalDailyRewards);
-
-        // Add minted balance and calculate final balance
-        const enrichedData: AddressData[] = nodes.map((node) => {
-          const initialMint = isSIP031Address(node.id) ? 200_000_000 : 0;
-          const dailyRewards = isSIP031Address(node.id) ? totalDailyRewards : 0;
-          const minted = initialMint + dailyRewards;
-          const finalBalance = minted + node.received - node.sent;
-          return {
-            ...node,
-            minted,
-            finalBalance,
-          };
-        });
-
-        setAddressData(enrichedData);
         setLoading(false);
       } catch (error) {
         console.error("Error loading data:", error);
@@ -72,45 +45,41 @@ const AddressesPage = () => {
       }
     };
 
-    loadData();
+    void loadData();
   }, []);
 
-  // Calculate totals for displayed addresses
+  // Totals for displayed addresses; "minted" is net of burns
   const displayedTotals = addressData.reduce(
     (acc, addr) => ({
-      minted: acc.minted + addr.minted,
+      opening: acc.opening + addr.opening,
+      minted: acc.minted + addr.minted - addr.burned,
       received: acc.received + addr.received,
       sent: acc.sent + addr.sent,
       finalBalance: acc.finalBalance + addr.finalBalance,
     }),
-    { minted: 0, received: 0, sent: 0, finalBalance: 0 }
+    { opening: 0, minted: 0, received: 0, sent: 0, finalBalance: 0 }
   );
 
-  // Calculate low volume addresses to balance the totals
-  const totalMinted = 200_000_000 + dailyRewardsMinted;
-  const lowVolumeMinted = totalMinted - displayedTotals.minted;
-  const lowVolumeFinalBalance = totalMinted - displayedTotals.finalBalance;
-
-  // Calculate received and sent for low volume addresses
-  // Total sent must equal total received across all addresses
+  // Transfers between displayed and low volume addresses.
+  // Total sent must equal total received across all addresses.
   const netDifference = displayedTotals.sent - displayedTotals.received;
   const lowVolumeReceived = netDifference > 0 ? netDifference : 0;
   const lowVolumeSent = netDifference < 0 ? -netDifference : 0;
+  const lowVolumeFinalBalance = lowVolumeReceived - lowVolumeSent;
 
-  // Grand totals including low volume addresses
   const grandTotals = {
-    minted: displayedTotals.minted + lowVolumeMinted,
+    opening: displayedTotals.opening,
+    minted: displayedTotals.minted,
     received: displayedTotals.received + lowVolumeReceived,
     sent: displayedTotals.sent + lowVolumeSent,
     finalBalance: displayedTotals.finalBalance + lowVolumeFinalBalance,
   };
 
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-lg text-muted-foreground">Loading addresses...</p>
         </div>
       </div>
@@ -134,7 +103,7 @@ const AddressesPage = () => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-linear-to-r from-primary to-primary-glow bg-clip-text text-transparent">
               All Addresses
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
@@ -150,6 +119,9 @@ const AddressesPage = () => {
                 <TableRow>
                   <TableHead className="min-w-[180px] sm:min-w-[220px] md:w-64">Address</TableHead>
                   <TableHead className="min-w-[120px] sm:min-w-[150px]">Comment</TableHead>
+                  <TableHead className="text-right min-w-[100px] sm:min-w-[120px] md:w-36 whitespace-nowrap">
+                    Opening
+                  </TableHead>
                   <TableHead className="text-right min-w-[100px] sm:min-w-[120px] md:w-36 whitespace-nowrap">
                     Minted
                   </TableHead>
@@ -175,7 +147,10 @@ const AddressesPage = () => {
                       {getAddressComment(addr.id) || ""}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base py-2 sm:py-3">
-                      {formatAmount(addr.minted)}
+                      {addr.tracked ? formatAmount(addr.opening) : ""}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base py-2 sm:py-3">
+                      {formatAmount(addr.minted - addr.burned)}
                     </TableCell>
                     <TableCell className="text-right font-mono text-xs sm:text-sm md:text-base py-2 sm:py-3">
                       {formatAmount(addr.received)}
@@ -191,6 +166,9 @@ const AddressesPage = () => {
                       }`}
                     >
                       {formatAmount(addr.finalBalance)}
+                      {!addr.tracked && (
+                        <span className="text-muted-foreground" title="Net flow with tracked addresses">*</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -201,9 +179,8 @@ const AddressesPage = () => {
                     Other Low Volume Addresses
                   </TableCell>
                   <TableCell className="py-3"></TableCell>
-                  <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
-                    {formatAmount(lowVolumeMinted)}
-                  </TableCell>
+                  <TableCell className="py-3"></TableCell>
+                  <TableCell className="py-3"></TableCell>
                   <TableCell className="text-right font-mono text-base py-3 text-muted-foreground">
                     {formatAmount(lowVolumeReceived)}
                   </TableCell>
@@ -221,6 +198,9 @@ const AddressesPage = () => {
                     <span className="font-bold">TOTAL</span>
                   </TableCell>
                   <TableCell className="py-3"></TableCell>
+                  <TableCell className="text-right font-mono text-base py-3">
+                    {formatAmount(grandTotals.opening)}
+                  </TableCell>
                   <TableCell className="text-right font-mono text-base py-3">
                     {formatAmount(grandTotals.minted)}
                   </TableCell>
@@ -243,6 +223,11 @@ const AddressesPage = () => {
               </TableBody>
             </Table>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Balances of tracked addresses match the chain at block {dataHeight.toLocaleString("en-US")}.
+            Opening is the balance at the start of the endowment, including fees and older history.
+            * Untracked counterparty: net flow with tracked addresses.
+          </p>
         </Card>
       </div>
     </div>

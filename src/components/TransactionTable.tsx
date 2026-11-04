@@ -29,7 +29,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
     if (!groupedByDay.has(dayIndex)) {
       groupedByDay.set(dayIndex, []);
     }
-    groupedByDay.get(dayIndex)!.push(tx);
+    groupedByDay.get(dayIndex).push(tx);
   });
 
   // Aggregate transactions by sender-receiver pairs within each day
@@ -42,7 +42,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
       
       if (pairMap.has(pairKey)) {
         // Sum amounts for the same pair and collect transaction details
-        const existing = pairMap.get(pairKey)!;
+        const existing = pairMap.get(pairKey);
         existing.amount += tx.amount;
         existing.txIds.push(tx.txId);
         existing.txDetails.push({ txId: tx.txId, amount: tx.amount, timestamp: tx.timestamp });
@@ -72,7 +72,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
     if (!groupedTransactions.has(dayIndex)) {
       groupedTransactions.set(dayIndex, []);
     }
-    groupedTransactions.get(dayIndex)!.push(tx);
+    groupedTransactions.get(dayIndex).push(tx);
   });
 
   // Sort by day index (descending - most recent first)
@@ -109,7 +109,7 @@ export function TransactionTable({ transactions, currentTimestamp, dayGroups }: 
             </TableHeader>
             <TableBody>
               {sortedDays.map((dayIndex, dayIdx) => {
-                const dayTransactions = groupedTransactions.get(dayIndex)!;
+                const dayTransactions = groupedTransactions.get(dayIndex);
                 const dayStart = dayGroups[dayIndex];
                 
                 return (

@@ -1,5 +1,7 @@
+import { describe, expect, it } from "vitest";
 import { getDayIndexAtTime, getTransactionsForDay, getNearestDayFromDate } from "./timeSeries";
-import {PARSED_TRANSACTIONS, groups } from "./parseTransactions.test"
+import { FIXTURE } from "./fixtures";
+import { loadDataFromFiles } from "./loadData";
 
 describe("getDayIndexAtTime", () => {
   it("returns correct index for exact match", () => {
@@ -26,33 +28,21 @@ describe("getDayIndexAtTime", () => {
 });
 
 describe("getTransactionForDay", () => {
-  it("should have 0 transactions for day 0", () => {
-    const dayTransactions = getTransactionsForDay(
-      groups,
-      0,
-      PARSED_TRANSACTIONS
-    )
-    expect (dayTransactions).toStrictEqual([]);
+  const ids = async (index: number) => {
+    const { groups, orderedTransactions } = await loadDataFromFiles(FIXTURE);
+    return getTransactionsForDay(groups, index, orderedTransactions).map((t) => t.id);
+  };
+
+  it("should have 0 transactions for the starting day", async () => {
+    expect(await ids(0)).toStrictEqual([]);
   });
 
-
-  it("should have 2 transactions for day 1", () => {
-    const dayTransactions = getTransactionsForDay(
-      groups,
-      1,
-      PARSED_TRANSACTIONS
-    )
-    expect (dayTransactions.map(t => t.timestamp)).toStrictEqual([1757894400001, 1757894400002]);
+  it("should have both transfers of a multi-transfer tx on day 2", async () => {
+    expect(await ids(2)).toStrictEqual(["0xb:0", "0xb:1"]);
   });
 
-
-  it("should have 1 transactions for day 2", () => {
-    const dayTransactions = getTransactionsForDay(
-      groups,
-      2,
-      PARSED_TRANSACTIONS
-    )
-    expect (dayTransactions.map(t => t.timestamp)).toStrictEqual([1757980800003]);
+  it("should have 1 transaction on day 3", async () => {
+    expect(await ids(3)).toStrictEqual(["0xd:0"]);
   });
 });
 
