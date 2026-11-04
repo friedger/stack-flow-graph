@@ -14,7 +14,7 @@ import { AddressSummary } from "@/utils/loadData";
 import { formatAmount } from "@/utils/formatters";
 import { AddressLink } from "@/components/AddressLink";
 import { getAddressComment } from "@/data/addressComments";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { LoaderCircle, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -79,7 +79,7 @@ const AddressesPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-lg text-muted-foreground">Loading addresses...</p>
         </div>
       </div>

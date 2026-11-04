@@ -12,7 +12,7 @@ import {
   Transaction
 } from "@/utils/parseTransactions";
 import { getDayIndexAtTime, getNearestDayFromDate } from "@/utils/timeSeries";
-import { Loader2 } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
@@ -157,7 +157,7 @@ const Index = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary mx-auto" />
           <p className="text-lg text-muted-foreground">
             Loading transaction data...
           </p>

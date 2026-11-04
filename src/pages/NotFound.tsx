@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Network, ArrowLeft } from "lucide-react";
+import { House, Network, ArrowLeft } from "lucide-react";
 
 // Random once per page load, so re-renders do not move the nodes.
 const FLOATING_NODES = Array.from({ length: 8 }, (_, i) => ({
@@ -64,7 +64,7 @@ const NotFound = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
           <Link to="/">
             <Button variant="default" size="lg" className="gap-2 shadow-lg hover:shadow-xl transition-all hover:scale-105">
-              <Home className="h-4 w-4" />
+              <House className="h-4 w-4" />
               Return to overview
             </Button>
           </Link>
