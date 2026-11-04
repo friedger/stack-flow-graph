@@ -17,7 +17,7 @@
   ],
   "follow": {
     "minStx": 100000,
-    "maxDepth": 1,
+    "maxDepth": 0,
     "maxEventsPerAddress": 5000
   },
   "ignore": []
